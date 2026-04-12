@@ -8,6 +8,9 @@ export interface Product {
   lowStockThreshold: number;
   taxRate: number;
   taxExempt: boolean;
+  expiryDate?: string;
+  batchNumber?: string;
+  hasExpiry: boolean;
 }
 
 export interface CartItem {
