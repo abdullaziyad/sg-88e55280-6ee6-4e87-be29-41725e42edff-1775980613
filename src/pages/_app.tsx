@@ -5,19 +5,22 @@ import { CartProvider } from "@/contexts/CartContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
+import { SettingsProvider } from "@/contexts/SettingsContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <LanguageProvider>
-          <DocumentProvider>
-            <CartProvider>
-              <Component {...pageProps} />
-            </CartProvider>
-          </DocumentProvider>
-        </LanguageProvider>
-      </AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <DocumentProvider>
+              <CartProvider>
+                <Component {...pageProps} />
+              </CartProvider>
+            </DocumentProvider>
+          </LanguageProvider>
+        </AuthProvider>
+      </SettingsProvider>
     </ThemeProvider>
   );
 }
