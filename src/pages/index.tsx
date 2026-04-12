@@ -14,7 +14,8 @@ import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History } from "lucide-react";
+import Link from "next/link";
 
 function POSContent() {
   const [products, setProducts] = useState<Product[]>(mockProducts);
@@ -65,6 +66,15 @@ function POSContent() {
               </div>
 
               <div className="flex items-center gap-3">
+                {isAdmin() && (
+                  <Link href="/history">
+                    <Button variant="outline" size="sm">
+                      <History className="w-4 h-4 mr-2" />
+                      {t("transactionHistory")}
+                    </Button>
+                  </Link>
+                )}
+
                 {user && (
                   <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
                     <ShieldCheck className="w-4 h-4 text-muted-foreground" />

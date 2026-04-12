@@ -1,6 +1,6 @@
 ---
 title: Create transaction history page for admins
-status: in_progress
+status: done
 priority: high
 type: feature
 tags: [history, admin, reporting]
@@ -13,12 +13,12 @@ position: 5
 Build a transaction history page where admins can view all past sales with detailed tax breakdowns. Include filters by date, payment method, and search by receipt number. Cashiers should not have access to this page.
 
 ## Checklist
-- [ ] Create TransactionHistory.tsx page component
-- [ ] Add navigation link in header (admin only)
-- [ ] Display transactions in table/card format
-- [ ] Show tax breakdown for each transaction
-- [ ] Add date range filter
-- [ ] Add payment method filter
-- [ ] Add search by receipt number
-- [ ] Implement role-based access control
-- [ ] Add translations for history page
+- [x] Create TransactionHistory.tsx page component
+- [x] Add navigation link in header (admin only)
+- [x] Display transactions in table/card format
+- [x] Show tax breakdown for each transaction
+- [x] Add date range filter
+- [x] Add payment method filter
+- [x] Add search by receipt number
+- [x] Implement role-based access control
+- [x] Add translations for history page
