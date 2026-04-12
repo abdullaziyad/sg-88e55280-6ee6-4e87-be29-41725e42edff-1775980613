@@ -1,8 +1,7 @@
 import { Product } from "@/types";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Package, AlertTriangle, Calendar } from "lucide-react";
+import { Plus, AlertTriangle, Calendar } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProductCardProps {
@@ -40,90 +39,75 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
   const expiryStatus = getExpiryStatus();
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="pt-4 pb-3 px-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <h3 className="font-heading font-semibold text-base text-foreground">
-              {product.name}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">{t("sku")}: {product.sku}</p>
-          </div>
-          <Package className="w-4 h-4 text-muted-foreground" />
+    <div className="flex items-center gap-4 p-3 bg-card border rounded-lg hover:shadow-md transition-shadow">
+      {/* Product Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-1">
+          <h3 className="font-heading font-semibold text-sm text-foreground truncate">
+            {product.name}
+          </h3>
+          {expiryStatus && (
+            <Badge variant={expiryStatus.variant} className="text-xs py-0 px-2">
+              <AlertTriangle className="w-3 h-3 mr-1" />
+              {expiryStatus.status === "expired" && `${t("expired")}`}
+              {expiryStatus.status === "expiresToday" && t("expiresToday")}
+              {expiryStatus.status === "expiringSoon" && `${expiryStatus.days}d`}
+              {expiryStatus.status === "expiringThisMonth" && `${expiryStatus.days}d`}
+            </Badge>
+          )}
         </div>
-
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">{t("category")}</span>
-            <Badge variant="secondary" className="text-xs py-0">
-              {product.category}
-            </Badge>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Stock</span>
-            <Badge variant={isLowStock ? "destructive" : "secondary"} className="text-xs py-0">
-              {product.stock} units
-            </Badge>
-          </div>
-
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>{t("sku")}: {product.sku}</span>
+          <span>•</span>
+          <span>{product.category}</span>
+          {product.batchNumber && (
+            <>
+              <span>•</span>
+              <span className="font-mono">{product.batchNumber}</span>
+            </>
+          )}
           {product.hasExpiry && product.expiryDate && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground flex items-center gap-1">
+            <>
+              <span>•</span>
+              <span className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                {t("expiry")}
-              </span>
-              <span className="text-xs text-muted-foreground">
                 {new Date(product.expiryDate).toLocaleDateString()}
               </span>
-            </div>
+            </>
           )}
-
-          {product.batchNumber && (
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">{t("batch")}</span>
-              <span className="text-xs font-mono text-muted-foreground">
-                {product.batchNumber}
-              </span>
-            </div>
-          )}
-
-          {expiryStatus && (
-            <div className="pt-1.5">
-              <Badge variant={expiryStatus.variant} className="w-full justify-center text-xs py-0.5">
-                <AlertTriangle className="w-3 h-3 mr-1" />
-                {expiryStatus.status === "expired" && `${t("expired")} (${expiryStatus.days} ${t("daysAgo")})`}
-                {expiryStatus.status === "expiresToday" && t("expiresToday")}
-                {expiryStatus.status === "expiringSoon" && `${t("expires")} ${expiryStatus.days} ${t("daysLeft")}`}
-                {expiryStatus.status === "expiringThisMonth" && `${expiryStatus.days} ${t("daysLeft")}`}
-              </Badge>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-1.5 border-t">
-            <span className="text-xs font-medium">{t("price")}</span>
-            <span className="text-base font-heading font-bold text-primary">
-              {t("mvr")} {product.price.toFixed(2)}
-            </span>
-          </div>
         </div>
-      </CardContent>
+      </div>
 
-      <CardFooter className="gap-2 px-4 py-3">
+      {/* Stock */}
+      <div className="flex-shrink-0">
+        <Badge variant={isLowStock ? "destructive" : "secondary"} className="text-xs">
+          {product.stock} {t("units")}
+        </Badge>
+      </div>
+
+      {/* Price */}
+      <div className="flex-shrink-0 text-right min-w-[100px]">
+        <span className="text-lg font-heading font-bold text-primary">
+          {t("mvr")} {product.price.toFixed(2)}
+        </span>
+      </div>
+
+      {/* Actions */}
+      <div className="flex-shrink-0 flex items-center gap-2">
         {onEdit && (
           <Button
             variant="outline"
             size="sm"
-            className="flex-1 h-8 text-xs"
+            className="h-8 px-3 text-xs"
             onClick={() => onEdit(product)}
           >
-            Edit
+            {t("edit")}
           </Button>
         )}
         {onAddToCart && (
           <Button
             size="sm"
-            className="flex-1 h-8 text-xs"
+            className="h-8 px-3 text-xs"
             onClick={() => onAddToCart(product)}
             disabled={product.stock === 0 || expiryStatus?.status === "expired"}
           >
@@ -131,7 +115,7 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             {t("addToCart")}
           </Button>
         )}
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }

@@ -317,7 +317,7 @@ function POSContent() {
                 )}
               </div>
 
-              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-2">
                 {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
