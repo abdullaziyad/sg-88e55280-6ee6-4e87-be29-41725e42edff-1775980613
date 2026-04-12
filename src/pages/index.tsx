@@ -17,7 +17,7 @@ import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart } from "lucide-react";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -151,6 +151,12 @@ function POSContent() {
                       <Button variant="outline" size="sm">
                         <CreditCard className="w-4 h-4 mr-2" />
                         {t("creditManagement")}
+                      </Button>
+                    </Link>
+                    <Link href="/reports">
+                      <Button variant="outline" size="sm">
+                        <FileBarChart className="w-4 h-4 mr-2" />
+                        {t("reports")}
                       </Button>
                     </Link>
                     <Link href="/settings">

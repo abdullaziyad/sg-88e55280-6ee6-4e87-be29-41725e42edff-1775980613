@@ -55,7 +55,9 @@
   }
   
   .receipt-content,
-  .receipt-content * {
+  .receipt-content *,
+  .print-content,
+  .print-content * {
     visibility: visible;
   }
   
@@ -69,12 +71,30 @@
     background: white !important;
     border: none !important;
   }
+
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20mm;
+    background: white !important;
+  }
   
-  /* Hide everything except receipt content */
+  /* Hide everything except receipt/report content */
   button,
   header,
   nav,
   footer {
+    display: none !important;
+  }
+
+  .print\:block {
+    display: block !important;
+  }
+
+  .print\:hidden {
     display: none !important;
   }
 }
