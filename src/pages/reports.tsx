@@ -31,7 +31,7 @@ import { format } from "date-fns";
 
 export default function ReportsPage() {
   const { user, isAdmin } = useAuth();
-  const { getDailySalesReport, getDateRangeSalesReport, getTopSellingProducts, getLowStockProducts, getDayEndReport } = useReports();
+  const { getDailySalesReport, getDateRangeSalesReport, getTopSellingProducts, getLowStockProducts, getDayEndReport, exportToCSV } = useReports();
   const { transactions } = useCart();
   const { t } = useLanguage();
   const { settings } = useSettings();
@@ -87,7 +87,7 @@ export default function ReportsPage() {
       }));
 
     const filename = `sales_report_${startDate.toISOString().split("T")[0]}_to_${endDate.toISOString().split("T")[0]}`;
-    useReports().exportToCSV(data, filename);
+    exportToCSV(data, filename);
   };
 
   return (
@@ -149,7 +149,7 @@ export default function ReportsPage() {
 
               <div className="print-content">
                 <div className="text-center mb-6 print:block hidden">
-                  <h1 className="font-heading font-bold text-2xl">{settings.businessName}</h1>
+                  <h1 className="font-heading font-bold text-2xl">{settings.shop.businessName}</h1>
                   <p className="text-muted-foreground">{t("dayEndReport")}</p>
                   <p className="text-sm">{format(selectedDate, "PPPP")}</p>
                 </div>
