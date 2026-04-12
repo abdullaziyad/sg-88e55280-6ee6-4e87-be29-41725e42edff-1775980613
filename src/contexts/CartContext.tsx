@@ -1,17 +1,16 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { Product, CartItem, Transaction } from "@/types";
+import type { Product, CartItem, Transaction } from "@/types";
 
 interface CartContextType {
   cart: CartItem[];
-  transactions: Transaction[];
   addToCart: (product: Product) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
   getTotal: () => number;
-  completeTransaction: (paymentMethod: "cash" | "card") => void;
+  completeTransaction: (paymentMethod: "cash" | "card") => Transaction;
+  transactions: Transaction[];
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -50,13 +49,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   };
 
-  const clearCart = () => setCart([]);
-
   const getTotal = () => {
     return cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   };
 
-  const completeTransaction = (paymentMethod: "cash" | "card") => {
+  const completeTransaction = (paymentMethod: "cash" | "card"): Transaction => {
     const transaction: Transaction = {
       id: Date.now().toString(),
       items: [...cart],
@@ -64,21 +61,23 @@ export function CartProvider({ children }: { children: ReactNode }) {
       paymentMethod,
       timestamp: new Date().toISOString(),
     };
+    
     setTransactions((prev) => [transaction, ...prev]);
-    clearCart();
+    setCart([]);
+    
+    return transaction;
   };
 
   return (
     <CartContext.Provider
       value={{
         cart,
-        transactions,
         addToCart,
         removeFromCart,
         updateQuantity,
-        clearCart,
         getTotal,
         completeTransaction,
+        transactions,
       }}
     >
       {children}

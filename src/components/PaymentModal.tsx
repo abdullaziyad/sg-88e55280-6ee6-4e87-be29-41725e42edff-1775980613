@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { CreditCard, Banknote, Receipt } from "lucide-react";
+import { Receipt } from "@/components/Receipt";
+import { Transaction } from "@/types";
+import { CreditCard, Banknote, CheckCircle2 } from "lucide-react";
 
 interface PaymentModalProps {
   open: boolean;
@@ -12,22 +14,30 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
-  const { getTotal, completeTransaction } = useCart();
+  const { getTotal, completeTransaction, cart } = useCart();
   const { t } = useLanguage();
+  const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
 
   const handlePayment = (method: "cash" | "card") => {
-    completeTransaction(method);
+    const completedTransaction = completeTransaction(method);
+    setTransaction(completedTransaction);
     setShowReceipt(true);
-    setTimeout(() => {
-      setShowReceipt(false);
-      onClose();
-      onComplete();
-    }, 2000);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleClose = () => {
+    setShowReceipt(false);
+    setTransaction(null);
+    onClose();
+    onComplete();
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         {!showReceipt ? (
           <>
@@ -49,6 +59,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                   size="lg"
                   className="h-24 flex-col gap-2"
                   onClick={() => handlePayment("cash")}
+                  disabled={cart.length === 0}
                 >
                   <Banknote className="w-8 h-8" />
                   <span>{t("cash")}</span>
@@ -59,6 +70,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                   size="lg"
                   className="h-24 flex-col gap-2"
                   onClick={() => handlePayment("card")}
+                  disabled={cart.length === 0}
                 >
                   <CreditCard className="w-8 h-8" />
                   <span>{t("card")}</span>
@@ -66,17 +78,17 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
               </div>
             </div>
           </>
-        ) : (
-          <div className="py-8 text-center">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <Receipt className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-            <h3 className="font-heading font-semibold text-xl mb-2">{t("paymentSuccessful")}</h3>
-            <p className="text-muted-foreground">{t("transactionCompleted")}</p>
-          </div>
-        )}
+        ) : transaction ? (
+          <>
+            <DialogHeader>
+              <DialogTitle className="font-heading flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5 text-primary" />
+                {t("paymentSuccessful")}
+              </DialogTitle>
+            </DialogHeader>
+            <Receipt transaction={transaction} onPrint={handlePrint} />
+          </>
+        ) : null}
       </DialogContent>
     </Dialog>
   );

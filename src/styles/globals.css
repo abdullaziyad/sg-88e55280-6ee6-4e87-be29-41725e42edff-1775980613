@@ -8,23 +8,32 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 200 25% 15%;
+
     --card: 0 0% 100%;
     --card-foreground: 200 25% 15%;
+
     --popover: 0 0% 100%;
     --popover-foreground: 200 25% 15%;
+
     --primary: 180 60% 35%;
     --primary-foreground: 0 0% 100%;
+
     --secondary: 200 15% 95%;
     --secondary-foreground: 200 25% 15%;
+
     --muted: 200 15% 95%;
-    --muted-foreground: 200 20% 40%;
+    --muted-foreground: 200 15% 40%;
+
     --accent: 25 85% 55%;
     --accent-foreground: 0 0% 100%;
+
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive-foreground: 0 0% 98%;
+
     --border: 200 15% 90%;
     --input: 200 15% 90%;
     --ring: 180 60% 35%;
+
     --radius: 0.5rem;
   }
 }
@@ -36,5 +45,36 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Print Styles */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  
+  .receipt-content,
+  .receipt-content * {
+    visibility: visible;
+  }
+  
+  .receipt-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    margin: 0;
+    padding: 10mm;
+    background: white !important;
+    border: none !important;
+  }
+  
+  /* Hide everything except receipt content */
+  button,
+  header,
+  nav,
+  footer {
+    display: none !important;
   }
 }

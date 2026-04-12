@@ -55,11 +55,21 @@ export const translations = {
     
     // Units
     mvr: "MVR",
+    
+    // Receipt
+    receipt: "Receipt",
+    date: "Date",
+    time: "Time",
+    receiptNumber: "Receipt No",
+    subtotal: "Subtotal",
+    printReceipt: "Print Receipt",
+    thankYou: "Thank you for your purchase!",
+    visitAgain: "Please visit us again",
   },
   dv: {
     // Header
-    appTitle: "ދިވެހި ފިހާރަ ޕީއޯއެސް",
-    appSubtitle: "ވިޔަފާރި ނިޒާމް",
+    appTitle: "މޯލްޑިވްސް ދުކާން POS",
+    appSubtitle: "ވިއްކުމުގެ ނިޒާމް",
     
     // Search & Actions
     searchPlaceholder: "ނަން، އެސްކޭޔޫ ނުވަތަ ކެޓަގަރީން ހޯދާ...",
@@ -112,5 +122,15 @@ export const translations = {
     
     // Units
     mvr: "ރ.",
+    
+    // Receipt
+    receipt: "ރަސީދު",
+    date: "ތާރީޚް",
+    time: "ގަޑި",
+    receiptNumber: "ރަސީދު ނަންބަރު",
+    subtotal: "ޖުމްލަ",
+    printReceipt: "ރަސީދު ޕްރިންޓްކުރޭ",
+    thankYou: "ގަންނަވާތީ ޝުކުރިއްޔާ!",
+    visitAgain: "އަލުން ވަޑައިގެންފިއްޔާ އުއްމީދުކުރަން",
   },
 };
