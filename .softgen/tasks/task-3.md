@@ -1,6 +1,6 @@
 ---
 title: Implement inventory tracking system
-status: todo
+status: done
 priority: high
 type: feature
 tags:
