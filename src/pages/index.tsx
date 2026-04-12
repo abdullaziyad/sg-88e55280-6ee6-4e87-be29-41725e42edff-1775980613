@@ -4,22 +4,27 @@ import { ProductCard } from "@/components/ProductCard";
 import { CheckoutCart } from "@/components/CheckoutCart";
 import { PaymentModal } from "@/components/PaymentModal";
 import { AddProductModal } from "@/components/AddProductModal";
+import { LoginModal } from "@/components/LoginModal";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { mockProducts } from "@/lib/mockData";
 import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Plus, Package } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck } from "lucide-react";
 
 function POSContent() {
   const [products, setProducts] = useState<Product[]>(mockProducts);
   const [searchQuery, setSearchQuery] = useState("");
   const [showPayment, setShowPayment] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
   const { addToCart } = useCart();
   const { t } = useLanguage();
+  const { user, logout, isAdmin, isCashier } = useAuth();
 
   const filteredProducts = products.filter(
     (p) =>
@@ -58,7 +63,34 @@ function POSContent() {
                   <p className="text-sm text-muted-foreground">{t("appSubtitle")}</p>
                 </div>
               </div>
-              <LanguageSwitch />
+
+              <div className="flex items-center gap-3">
+                {user && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
+                    <ShieldCheck className="w-4 h-4 text-muted-foreground" />
+                    <div className="text-sm">
+                      <p className="font-medium">{user.name}</p>
+                      <Badge variant="secondary" className="text-xs mt-0.5">
+                        {user.role === "admin" ? t("admin") : t("cashier")}
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+
+                <LanguageSwitch />
+
+                {user ? (
+                  <Button variant="outline" size="sm" onClick={logout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    {t("logout")}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => setShowLogin(true)}>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    {t("login")}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -76,10 +108,18 @@ function POSContent() {
                     className="pl-10"
                   />
                 </div>
-                <Button onClick={() => setShowAddProduct(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {t("addProduct")}
-                </Button>
+                {isAdmin() && (
+                  <Button onClick={() => setShowAddProduct(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t("addProduct")}
+                  </Button>
+                )}
+                {isCashier() && (
+                  <Button variant="outline" disabled className="cursor-not-allowed">
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t("addProduct")}
+                  </Button>
+                )}
               </div>
 
               <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -119,6 +159,11 @@ function POSContent() {
         open={showAddProduct}
         onClose={() => setShowAddProduct(false)}
         onSave={handleAddProduct}
+      />
+
+      <LoginModal
+        open={showLogin}
+        onClose={() => setShowLogin(false)}
       />
     </>
   );
