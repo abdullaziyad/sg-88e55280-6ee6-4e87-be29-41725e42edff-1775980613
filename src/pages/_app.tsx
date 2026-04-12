@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
+import { CreditProvider } from "@/contexts/CreditContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -13,11 +14,13 @@ export default function App({ Component, pageProps }: AppProps) {
       <SettingsProvider>
         <AuthProvider>
           <LanguageProvider>
-            <DocumentProvider>
-              <CartProvider>
-                <Component {...pageProps} />
-              </CartProvider>
-            </DocumentProvider>
+            <CreditProvider>
+              <DocumentProvider>
+                <CartProvider>
+                  <Component {...pageProps} />
+                </CartProvider>
+              </DocumentProvider>
+            </CreditProvider>
           </LanguageProvider>
         </AuthProvider>
       </SettingsProvider>

@@ -61,3 +61,38 @@ export interface Quotation {
   notes?: string;
   convertedToInvoiceId?: string;
 }
+
+export interface CreditBill {
+  id: string;
+  billNumber: string;
+  customer: Customer;
+  items: CartItem[];
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  amountPaid: number;
+  amountDue: number;
+  status: "pending" | "partial" | "paid" | "overdue";
+  createdAt: string;
+  dueDate: string;
+  payments: CreditPayment[];
+  notes?: string;
+}
+
+export interface CreditPayment {
+  id: string;
+  amount: number;
+  paymentMethod: "cash" | "card";
+  paymentDate: string;
+  notes?: string;
+}
+
+export interface CustomerLedger {
+  customerId: string;
+  customer: Customer;
+  totalCredit: number;
+  totalPaid: number;
+  outstandingBalance: number;
+  creditBills: CreditBill[];
+  creditLimit?: number;
+}

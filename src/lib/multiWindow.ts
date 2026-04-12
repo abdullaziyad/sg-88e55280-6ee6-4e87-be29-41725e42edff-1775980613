@@ -1,7 +1,7 @@
 // Multi-window synchronization utilities using BroadcastChannel and localStorage
 
 export interface SyncMessage {
-  type: "new_transaction" | "stock_update" | "invoice_update" | "quotation_update";
+  type: "new_transaction" | "stock_update" | "invoice_update" | "quotation_update" | "credit_update";
   productId?: string;
   newStock?: number;
   transactionId?: string;
