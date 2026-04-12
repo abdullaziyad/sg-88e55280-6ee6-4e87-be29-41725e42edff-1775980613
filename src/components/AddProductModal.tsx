@@ -20,6 +20,7 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
   const [formData, setFormData] = useState({
     name: editProduct?.name || "",
     sku: editProduct?.sku || "",
+    barcode: editProduct?.barcode || "",
     price: editProduct?.price.toString() || "",
     stock: editProduct?.stock.toString() || "",
     category: editProduct?.category || "",
@@ -36,6 +37,7 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
     onSave({
       name: formData.name,
       sku: formData.sku,
+      barcode: formData.barcode || undefined,
       price: parseFloat(formData.price),
       stock: parseInt(formData.stock),
       category: formData.category,
@@ -83,15 +85,25 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">{t("category")}</Label>
+              <Label htmlFor="barcode">{t("barcode")} ({t("optional")})</Label>
               <Input
-                id="category"
-                required
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder={t("categoryPlaceholder")}
+                id="barcode"
+                value={formData.barcode}
+                onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                placeholder={t("barcodePlaceholder")}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">{t("category")}</Label>
+            <Input
+              id="category"
+              required
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              placeholder={t("categoryPlaceholder")}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
