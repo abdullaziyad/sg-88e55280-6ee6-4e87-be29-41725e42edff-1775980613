@@ -4,7 +4,9 @@ import { ProductCard } from "@/components/ProductCard";
 import { CheckoutCart } from "@/components/CheckoutCart";
 import { PaymentModal } from "@/components/PaymentModal";
 import { AddProductModal } from "@/components/AddProductModal";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { CartProvider, useCart } from "@/contexts/CartContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { mockProducts } from "@/lib/mockData";
 import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
@@ -17,6 +19,7 @@ function POSContent() {
   const [showPayment, setShowPayment] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const { addToCart } = useCart();
+  const { t } = useLanguage();
 
   const filteredProducts = products.filter(
     (p) =>
@@ -50,11 +53,12 @@ function POSContent() {
                 </div>
                 <div>
                   <h1 className="font-heading font-bold text-xl text-foreground">
-                    Maldives Shop POS
+                    {t("appTitle")}
                   </h1>
-                  <p className="text-sm text-muted-foreground">Point of Sale System</p>
+                  <p className="text-sm text-muted-foreground">{t("appSubtitle")}</p>
                 </div>
               </div>
+              <LanguageSwitch />
             </div>
           </div>
         </header>
@@ -66,7 +70,7 @@ function POSContent() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
-                    placeholder="Search products by name, SKU, or category..."
+                    placeholder={t("searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -74,7 +78,7 @@ function POSContent() {
                 </div>
                 <Button onClick={() => setShowAddProduct(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Product
+                  {t("addProduct")}
                 </Button>
               </div>
 
@@ -91,7 +95,7 @@ function POSContent() {
               {filteredProducts.length === 0 && (
                 <div className="text-center py-12">
                   <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No products found</p>
+                  <p className="text-muted-foreground">{t("noProductsFound")}</p>
                 </div>
               )}
             </div>

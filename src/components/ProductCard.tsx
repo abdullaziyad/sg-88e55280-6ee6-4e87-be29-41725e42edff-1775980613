@@ -3,6 +3,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Plus, Package } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) {
   const isLowStock = product.stock <= product.lowStockThreshold;
+  const { t } = useLanguage();
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -21,14 +23,14 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             <h3 className="font-heading font-semibold text-lg text-foreground">
               {product.name}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">SKU: {product.sku}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("sku")}: {product.sku}</p>
           </div>
           <Package className="w-5 h-5 text-muted-foreground" />
         </div>
 
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Category</span>
+            <span className="text-sm text-muted-foreground">{t("category")}</span>
             <Badge variant="secondary" className="text-xs">
               {product.category}
             </Badge>
@@ -42,9 +44,9 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
           </div>
 
           <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-sm font-medium">Price</span>
+            <span className="text-sm font-medium">{t("price")}</span>
             <span className="text-lg font-heading font-bold text-primary">
-              MVR {product.price.toFixed(2)}
+              {t("mvr")} {product.price.toFixed(2)}
             </span>
           </div>
         </div>
@@ -69,7 +71,7 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             disabled={product.stock === 0}
           >
             <Plus className="w-4 h-4 mr-1" />
-            Add to Cart
+            {t("addToCart")}
           </Button>
         )}
       </CardFooter>

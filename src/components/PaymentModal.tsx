@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { CreditCard, Banknote, Receipt } from "lucide-react";
 
 interface PaymentModalProps {
@@ -12,6 +13,7 @@ interface PaymentModalProps {
 
 export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
   const { getTotal, completeTransaction } = useCart();
+  const { t } = useLanguage();
   const [showReceipt, setShowReceipt] = useState(false);
 
   const handlePayment = (method: "cash" | "card") => {
@@ -30,14 +32,14 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
         {!showReceipt ? (
           <>
             <DialogHeader>
-              <DialogTitle className="font-heading">Select Payment Method</DialogTitle>
+              <DialogTitle className="font-heading">{t("selectPaymentMethod")}</DialogTitle>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
               <div className="text-center py-6 border rounded-lg bg-muted/50">
-                <p className="text-sm text-muted-foreground mb-2">Total Amount</p>
+                <p className="text-sm text-muted-foreground mb-2">{t("total")}</p>
                 <p className="text-3xl font-heading font-bold text-primary">
-                  MVR {getTotal().toFixed(2)}
+                  {t("mvr")} {getTotal().toFixed(2)}
                 </p>
               </div>
 
@@ -49,7 +51,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                   onClick={() => handlePayment("cash")}
                 >
                   <Banknote className="w-8 h-8" />
-                  <span>Cash</span>
+                  <span>{t("cash")}</span>
                 </Button>
 
                 <Button
@@ -59,7 +61,7 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                   onClick={() => handlePayment("card")}
                 >
                   <CreditCard className="w-8 h-8" />
-                  <span>Card</span>
+                  <span>{t("card")}</span>
                 </Button>
               </div>
             </div>
@@ -71,8 +73,8 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
                 <Receipt className="w-8 h-8 text-primary" />
               </div>
             </div>
-            <h3 className="font-heading font-semibold text-xl mb-2">Payment Successful!</h3>
-            <p className="text-muted-foreground">Transaction completed</p>
+            <h3 className="font-heading font-semibold text-xl mb-2">{t("paymentSuccessful")}</h3>
+            <p className="text-muted-foreground">{t("transactionCompleted")}</p>
           </div>
         )}
       </DialogContent>

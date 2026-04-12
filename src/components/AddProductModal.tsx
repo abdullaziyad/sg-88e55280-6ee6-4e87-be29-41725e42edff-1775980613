@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Product } from "@/types";
 
 interface AddProductModalProps {
@@ -13,6 +14,7 @@ interface AddProductModalProps {
 }
 
 export function AddProductModal({ open, onClose, onSave, editProduct }: AddProductModalProps) {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     name: editProduct?.name || "",
     sku: editProduct?.sku || "",
@@ -40,49 +42,49 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-heading">
-            {editProduct ? "Edit Product" : "Add New Product"}
+            {t("addNewProduct")}
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Product Name</Label>
+            <Label htmlFor="name">{t("productName")}</Label>
             <Input
               id="name"
               required
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., Coca Cola 330ml"
+              placeholder={t("productNamePlaceholder")}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="sku">SKU</Label>
+              <Label htmlFor="sku">{t("sku")}</Label>
               <Input
                 id="sku"
                 required
                 value={formData.sku}
                 onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                placeholder="BEV-001"
+                placeholder={t("skuPlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
+              <Label htmlFor="category">{t("category")}</Label>
               <Input
                 id="category"
                 required
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                placeholder="Beverages"
+                placeholder={t("categoryPlaceholder")}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="price">Price (MVR)</Label>
+              <Label htmlFor="price">{t("price")}</Label>
               <Input
                 id="price"
                 type="number"
@@ -90,41 +92,41 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
                 required
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                placeholder="15.00"
+                placeholder={t("pricePlaceholder")}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stock">Stock Quantity</Label>
+              <Label htmlFor="stock">{t("stockQuantity")}</Label>
               <Input
                 id="stock"
                 type="number"
                 required
                 value={formData.stock}
                 onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                placeholder="48"
+                placeholder={t("stockPlaceholder")}
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="threshold">Low Stock Threshold</Label>
+            <Label htmlFor="threshold">{t("lowStockThreshold")}</Label>
             <Input
               id="threshold"
               type="number"
               required
               value={formData.lowStockThreshold}
               onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
-              placeholder="10"
+              placeholder={t("thresholdPlaceholder")}
             />
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t("cancel")}
             </Button>
             <Button type="submit">
-              {editProduct ? "Update Product" : "Add Product"}
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>

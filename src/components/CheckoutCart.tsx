@@ -1,4 +1,5 @@
 import { useCart } from "@/contexts/CartContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ interface CheckoutCartProps {
 
 export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
   const { cart, removeFromCart, updateQuantity, getTotal } = useCart();
+  const { t } = useLanguage();
 
   if (cart.length === 0) {
     return (
@@ -19,9 +21,9 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             <ShoppingCart className="w-12 h-12 text-muted-foreground" />
             <div>
-              <h3 className="font-heading font-semibold text-lg">Cart is Empty</h3>
+              <h3 className="font-heading font-semibold text-lg">{t("emptyCart")}</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Add products to start a transaction
+                {t("emptyCartMessage")}
               </p>
             </div>
           </div>
@@ -33,7 +35,7 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
   return (
     <Card className="h-full flex flex-col">
       <CardHeader>
-        <CardTitle className="font-heading">Shopping Cart ({cart.length})</CardTitle>
+        <CardTitle className="font-heading">{t("cart")} ({cart.length})</CardTitle>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col">
@@ -47,7 +49,7 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{item.product.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    MVR {item.product.price.toFixed(2)} each
+                    {t("mvr")} {item.product.price.toFixed(2)} each
                   </p>
                 </div>
 
@@ -83,7 +85,7 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
 
                 <div className="text-right min-w-[80px]">
                   <p className="font-semibold text-sm">
-                    MVR {(item.product.price * item.quantity).toFixed(2)}
+                    {t("mvr")} {(item.product.price * item.quantity).toFixed(2)}
                   </p>
                 </div>
 
@@ -102,14 +104,14 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
 
         <div className="mt-6 pt-6 border-t space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-heading font-semibold">Total</span>
+            <span className="text-lg font-heading font-semibold">{t("total")}</span>
             <span className="text-2xl font-heading font-bold text-primary">
-              MVR {getTotal().toFixed(2)}
+              {t("mvr")} {getTotal().toFixed(2)}
             </span>
           </div>
 
           <Button className="w-full" size="lg" onClick={onCheckout}>
-            Complete Payment
+            {t("completePayment")}
           </Button>
         </div>
       </CardContent>
