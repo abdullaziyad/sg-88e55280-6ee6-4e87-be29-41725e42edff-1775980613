@@ -7,6 +7,7 @@ import { AddProductModal } from "@/components/AddProductModal";
 import { LoginModal } from "@/components/LoginModal";
 import { InvoiceModal } from "@/components/InvoiceModal";
 import { QuotationModal } from "@/components/QuotationModal";
+import { CreditBillModal } from "@/components/CreditBillModal";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -16,7 +17,7 @@ import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard } from "lucide-react";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -34,8 +35,9 @@ function POSContent() {
   const [showLogin, setShowLogin] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [showQuotation, setShowQuotation] = useState(false);
+  const [showCreditBill, setShowCreditBill] = useState(false);
   const [terminalName, setTerminalName] = useState("");
-  const { addToCart, cart } = useCart();
+  const { addToCart, cart, clearCart } = useCart();
   const { t } = useLanguage();
   const { user, logout, isAdmin, isCashier } = useAuth();
 
@@ -145,6 +147,12 @@ function POSContent() {
                         {t("transactionHistory")}
                       </Button>
                     </Link>
+                    <Link href="/credit">
+                      <Button variant="outline" size="sm">
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        {t("creditManagement")}
+                      </Button>
+                    </Link>
                     <Link href="/settings">
                       <Button variant="outline" size="sm">
                         <Settings className="w-4 h-4 mr-2" />
@@ -235,6 +243,7 @@ function POSContent() {
                   onCheckout={() => setShowPayment(true)}
                   onCreateInvoice={() => setShowInvoice(true)}
                   onCreateQuotation={() => setShowQuotation(true)}
+                  onCreateCreditBill={() => setShowCreditBill(true)}
                 />
               </div>
             </div>
@@ -274,6 +283,16 @@ function POSContent() {
         onSuccess={() => {
           setShowQuotation(false);
           alert(t("quotationCreated"));
+        }}
+      />
+
+      <CreditBillModal
+        open={showCreditBill}
+        onClose={() => setShowCreditBill(false)}
+        onSuccess={() => {
+          setShowCreditBill(false);
+          clearCart();
+          alert(t("creditBillCreated"));
         }}
       />
     </>

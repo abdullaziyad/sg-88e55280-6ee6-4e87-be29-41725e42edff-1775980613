@@ -4,16 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, Trash2, ShoppingCart, FileText, Receipt } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, FileText, Receipt, CreditCard } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CheckoutCartProps {
   onCheckout: () => void;
   onCreateInvoice?: () => void;
   onCreateQuotation?: () => void;
+  onCreateCreditBill?: () => void;
 }
 
-export function CheckoutCart({ onCheckout, onCreateInvoice, onCreateQuotation }: CheckoutCartProps) {
+export function CheckoutCart({ onCheckout, onCreateInvoice, onCreateQuotation, onCreateCreditBill }: CheckoutCartProps) {
   const { cart, removeFromCart, updateQuantity, getSubtotal, getTaxAmount, getTotal } = useCart();
   const { t } = useLanguage();
 
@@ -160,6 +161,18 @@ export function CheckoutCart({ onCheckout, onCreateInvoice, onCreateQuotation }:
               >
                 <FileText className="w-4 h-4 mr-2" />
                 {t("createQuotation")}
+              </Button>
+            )}
+
+            {onCreateCreditBill && (
+              <Button
+                variant="outline"
+                className="w-full"
+                size="sm"
+                onClick={onCreateCreditBill}
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                {t("createCreditBill")}
               </Button>
             )}
           </div>
