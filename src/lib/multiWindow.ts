@@ -1,28 +1,26 @@
 // Multi-window synchronization utilities using BroadcastChannel and localStorage
 
-export interface StockUpdateMessage {
-  type: "stock_update";
-  productId: string;
-  newStock: number;
+export interface SyncMessage {
+  type: "new_transaction" | "stock_update" | "invoice_update" | "quotation_update";
+  productId?: string;
+  newStock?: number;
+  transactionId?: string;
 }
 
-export interface TransactionMessage {
-  type: "new_transaction";
-  transactionId: string;
-}
+let channel: BroadcastChannel | null = null;
 
-export type SyncMessage = StockUpdateMessage | TransactionMessage;
-
-// BroadcastChannel for real-time sync across tabs
-let broadcastChannel: BroadcastChannel | null = null;
-
-export function initBroadcastChannel() {
+export function initBroadcastChannel(): BroadcastChannel | null {
   if (typeof window === "undefined") return null;
   
-  if (!broadcastChannel) {
-    broadcastChannel = new BroadcastChannel("pos_sync");
+  if (!channel) {
+    try {
+      channel = new BroadcastChannel("pos_sync");
+    } catch (error) {
+      console.error("BroadcastChannel not supported", error);
+      return null;
+    }
   }
-  return broadcastChannel;
+  return channel;
 }
 
 export function sendMessage(message: SyncMessage) {
@@ -44,62 +42,71 @@ export function onMessage(callback: (message: SyncMessage) => void) {
 
 // Generate unique terminal ID
 export function getTerminalId(): string {
-  if (typeof window === "undefined") return "server";
+  if (typeof window === "undefined") return "";
   
-  let terminalId = localStorage.getItem("terminal_id");
+  let terminalId = sessionStorage.getItem("terminal_id");
   if (!terminalId) {
-    terminalId = `terminal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    localStorage.setItem("terminal_id", terminalId);
+    terminalId = `T${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem("terminal_id", terminalId);
   }
   return terminalId;
 }
 
-// Get terminal name (cashier-friendly)
 export function getTerminalName(): string {
   const id = getTerminalId();
-  const parts = id.split("-");
-  return `Terminal ${parts[parts.length - 1].toUpperCase().slice(0, 4)}`;
+  const terminals = JSON.parse(localStorage.getItem("active_terminals") || "[]");
+  
+  let index = terminals.indexOf(id);
+  if (index === -1) {
+    terminals.push(id);
+    localStorage.setItem("active_terminals", JSON.stringify(terminals));
+    index = terminals.length - 1;
+  }
+  
+  return `Terminal ${index + 1}`;
 }
 
-// Shared inventory in localStorage
-export function getSharedInventory() {
+// Shared inventory management
+const INVENTORY_KEY = "shared_inventory";
+
+export function getSharedInventory(): Record<string, number> {
   if (typeof window === "undefined") return {};
-  const data = localStorage.getItem("shared_inventory");
+  const data = localStorage.getItem(INVENTORY_KEY);
   return data ? JSON.parse(data) : {};
 }
 
-export function updateSharedInventory(productId: string, stock: number) {
+export function updateSharedInventory(productId: string, newStock: number) {
   if (typeof window === "undefined") return;
   
   const inventory = getSharedInventory();
-  inventory[productId] = stock;
-  localStorage.setItem("shared_inventory", JSON.stringify(inventory));
+  inventory[productId] = newStock;
+  localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
   
-  // Notify other windows
   sendMessage({
     type: "stock_update",
     productId,
-    newStock: stock,
+    newStock,
   });
 }
 
-// Shared transactions in localStorage
+// Shared transactions
+const TRANSACTIONS_KEY = "shared_transactions";
+
 export function getSharedTransactions() {
   if (typeof window === "undefined") return [];
-  const data = localStorage.getItem("shared_transactions");
+  const data = localStorage.getItem(TRANSACTIONS_KEY);
   return data ? JSON.parse(data) : [];
 }
 
-export function addSharedTransaction(transaction: unknown) {
+export function addSharedTransaction(transaction: { id: string }) {
   if (typeof window === "undefined") return;
   
   const transactions = getSharedTransactions();
   transactions.unshift(transaction);
-  localStorage.setItem("shared_transactions", JSON.stringify(transactions));
+  localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(transactions));
   
-  // Notify other windows
   sendMessage({
     type: "new_transaction",
-    transactionId: (transaction as { id: string }).id,
+    transactionId: transaction.id,
   });
 }

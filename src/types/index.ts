@@ -6,7 +6,7 @@ export interface Product {
   stock: number;
   category: string;
   lowStockThreshold: number;
-  taxRate: number; // GST rate as percentage (0, 6, 8, etc.)
+  taxRate: number;
   taxExempt: boolean;
 }
 
@@ -23,4 +23,41 @@ export interface Transaction {
   total: number;
   paymentMethod: "cash" | "card";
   timestamp: string;
+}
+
+export interface Customer {
+  name: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  customer: Customer;
+  items: CartItem[];
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  paymentMethod?: "cash" | "card" | "pending";
+  status: "paid" | "unpaid" | "cancelled";
+  createdAt: string;
+  dueDate?: string;
+  notes?: string;
+}
+
+export interface Quotation {
+  id: string;
+  quotationNumber: string;
+  customer: Customer;
+  items: CartItem[];
+  subtotal: number;
+  taxAmount: number;
+  total: number;
+  status: "pending" | "accepted" | "rejected" | "converted";
+  createdAt: string;
+  validUntil: string;
+  notes?: string;
+  convertedToInvoiceId?: string;
 }
