@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { DocumentProvider } from "@/contexts/DocumentContext";
 import { SettingsProvider } from "@/contexts/SettingsContext";
 import { CreditProvider } from "@/contexts/CreditContext";
+import { ReportsProvider } from "@/contexts/ReportsContext";
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -17,7 +18,9 @@ export default function App({ Component, pageProps }: AppProps) {
             <CreditProvider>
               <DocumentProvider>
                 <CartProvider>
-                  <Component {...pageProps} />
+                  <ReportsProvider>
+                    <Component {...pageProps} />
+                  </ReportsProvider>
                 </CartProvider>
               </DocumentProvider>
             </CreditProvider>
