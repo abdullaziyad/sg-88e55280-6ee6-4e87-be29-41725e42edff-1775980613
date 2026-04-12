@@ -91,6 +91,9 @@ function POSContent() {
     const product: Product = {
       ...newProduct,
       id: Date.now().toString(),
+      hasExpiry: newProduct.hasExpiry || false,
+      expiryDate: newProduct.hasExpiry ? newProduct.expiryDate : undefined,
+      batchNumber: newProduct.hasExpiry ? newProduct.batchNumber : undefined,
     };
     setProducts([...products, product]);
     updateSharedInventory(product.id, product.stock);

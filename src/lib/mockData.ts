@@ -31,7 +31,7 @@ export const mockProducts: Product[] = [
     taxRate: 0,
     taxExempt: true,
     hasExpiry: true,
-    expiryDate: getDateOffset(120), // Expires in 4 months
+    expiryDate: getDateOffset(120),
     batchNumber: "OIL2024-03",
   },
   {
@@ -45,7 +45,7 @@ export const mockProducts: Product[] = [
     taxRate: 8,
     taxExempt: false,
     hasExpiry: true,
-    expiryDate: getDateOffset(45), // Expires in 1.5 months
+    expiryDate: getDateOffset(45),
     batchNumber: "NOO-2024-12",
   },
   {
@@ -59,7 +59,7 @@ export const mockProducts: Product[] = [
     taxRate: 8,
     taxExempt: false,
     hasExpiry: true,
-    expiryDate: getDateOffset(5), // Expires in 5 days - WARNING
+    expiryDate: getDateOffset(5),
     batchNumber: "COKE-DEC24",
   },
   {
@@ -73,7 +73,7 @@ export const mockProducts: Product[] = [
     taxRate: 6,
     taxExempt: false,
     hasExpiry: true,
-    expiryDate: getDateOffset(180), // Expires in 6 months
+    expiryDate: getDateOffset(180),
     batchNumber: "SHP-2025-06",
   },
   {
@@ -111,7 +111,7 @@ export const mockProducts: Product[] = [
     taxRate: 8,
     taxExempt: false,
     hasExpiry: true,
-    expiryDate: getDateOffset(-3), // Expired 3 days ago - EXPIRED
+    expiryDate: getDateOffset(-3),
     batchNumber: "H2O-NOV24",
   },
 ];
