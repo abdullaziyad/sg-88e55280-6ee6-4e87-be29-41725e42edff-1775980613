@@ -12,12 +12,14 @@ import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBarcodeScanner } from "@/hooks/useBarcodeScanner";
 import { mockProducts } from "@/lib/mockData";
 import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart, Users } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart, Users, ScanLine, CheckCircle2, XCircle } from "lucide-react";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -37,9 +39,71 @@ function POSContent() {
   const [showQuotation, setShowQuotation] = useState(false);
   const [showCreditBill, setShowCreditBill] = useState(false);
   const [terminalName, setTerminalName] = useState("");
+  const [lastScannedBarcode, setLastScannedBarcode] = useState<string>("");
   const { addToCart, cart, clearCart } = useCart();
   const { t } = useLanguage();
   const { user, logout, isAdmin, isCashier } = useAuth();
+  const { toast } = useToast();
+
+  // Barcode scanner integration
+  useBarcodeScanner({
+    onScan: (barcode) => {
+      setLastScannedBarcode(barcode);
+      
+      // Find product by barcode
+      const product = products.find((p) => p.barcode === barcode);
+      
+      if (product) {
+        // Check if product is in stock and not expired
+        if (product.stock === 0) {
+          toast({
+            title: t("outOfStock"),
+            description: `${product.name} - ${t("productNotFound")}`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check if product is expired
+        if (product.hasExpiry && product.expiryDate) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const expiryDate = new Date(product.expiryDate);
+          expiryDate.setHours(0, 0, 0, 0);
+          
+          if (expiryDate < today) {
+            toast({
+              title: t("expired"),
+              description: `${product.name} - ${t("productNotFound")}`,
+              variant: "destructive",
+            });
+            return;
+          }
+        }
+
+        // Add to cart
+        handleAddToCart(product);
+        
+        toast({
+          title: t("productScanned"),
+          description: `${product.name} ${t("productAddedToCart")}`,
+        });
+      } else {
+        toast({
+          title: t("productNotFound"),
+          description: `${t("barcode")}: ${barcode}`,
+          variant: "destructive",
+        });
+      }
+      
+      // Clear last scanned after 2 seconds
+      setTimeout(() => setLastScannedBarcode(""), 2000);
+    },
+    onError: (error) => {
+      console.error("Barcode scanner error:", error);
+    },
+    enabled: true,
+  });
 
   // Initialize terminal and sync inventory
   useEffect(() => {
@@ -84,7 +148,8 @@ function POSContent() {
     (p) =>
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      p.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.barcode && p.barcode.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleAddProduct = (newProduct: Omit<Product, "id">) => {
@@ -231,6 +296,24 @@ function POSContent() {
                     <Plus className="w-4 h-4 mr-2" />
                     {t("addProduct")}
                   </Button>
+                )}
+              </div>
+
+              {/* Barcode Scanner Status */}
+              <div className="flex items-center justify-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                <div className={`flex items-center gap-2 ${lastScannedBarcode ? "animate-pulse" : ""}`}>
+                  <ScanLine className={`w-5 h-5 ${lastScannedBarcode ? "text-primary" : "text-muted-foreground"}`} />
+                  <span className="text-sm font-medium text-foreground">
+                    {lastScannedBarcode ? t("productScanned") : t("scannerReady")}
+                  </span>
+                </div>
+                {lastScannedBarcode && (
+                  <Badge variant="default" className="font-mono">
+                    {lastScannedBarcode}
+                  </Badge>
+                )}
+                {!lastScannedBarcode && (
+                  <span className="text-xs text-muted-foreground">{t("scanToAddProducts")}</span>
                 )}
               </div>
 
