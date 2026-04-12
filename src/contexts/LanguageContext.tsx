@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
+import { translations } from "@/lib/translations";
 
 type Language = "en" | "dv";
 
@@ -16,8 +17,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language>("en");
 
   const t = (key: string): string => {
-    const translations = require("@/lib/translations").translations;
-    return translations[language][key] || key;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (translations[language] as any)[key] || key;
   };
 
   return (
