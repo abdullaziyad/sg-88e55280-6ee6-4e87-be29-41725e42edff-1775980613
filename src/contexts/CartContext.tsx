@@ -1,7 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { Product, CartItem, Transaction } from "@/types";
+import {
+  getSharedTransactions,
+  addSharedTransaction,
+  onMessage,
+  initBroadcastChannel,
+} from "@/lib/multiWindow";
 
 interface CartContextType {
   cart: CartItem[];
@@ -20,6 +26,25 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  // Load shared transactions on mount
+  useEffect(() => {
+    setTransactions(getSharedTransactions());
+    
+    // Listen for new transactions from other windows
+    const cleanup = onMessage((message) => {
+      if (message.type === "new_transaction") {
+        setTransactions(getSharedTransactions());
+      }
+    });
+
+    // Initialize BroadcastChannel
+    initBroadcastChannel();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, []);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -79,7 +104,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       timestamp: new Date().toISOString(),
     };
     
-    setTransactions((prev) => [transaction, ...prev]);
+    // Save to shared localStorage and notify other windows
+    addSharedTransaction(transaction);
+    setTransactions(getSharedTransactions());
     setCart([]);
     
     return transaction;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
 import { ProductCard } from "@/components/ProductCard";
 import { CheckoutCart } from "@/components/CheckoutCart";
@@ -14,8 +14,15 @@ import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor } from "lucide-react";
 import Link from "next/link";
+import {
+  getTerminalName,
+  getSharedInventory,
+  updateSharedInventory,
+  onMessage,
+  initBroadcastChannel,
+} from "@/lib/multiWindow";
 
 function POSContent() {
   const [products, setProducts] = useState<Product[]>(mockProducts);
@@ -23,9 +30,49 @@ function POSContent() {
   const [showPayment, setShowPayment] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [terminalName, setTerminalName] = useState("");
   const { addToCart } = useCart();
   const { t } = useLanguage();
   const { user, logout, isAdmin, isCashier } = useAuth();
+
+  // Initialize terminal and sync inventory
+  useEffect(() => {
+    setTerminalName(getTerminalName());
+    
+    // Load shared inventory
+    const sharedInventory = getSharedInventory();
+    if (Object.keys(sharedInventory).length > 0) {
+      setProducts((prev) =>
+        prev.map((p) => ({
+          ...p,
+          stock: sharedInventory[p.id] !== undefined ? sharedInventory[p.id] : p.stock,
+        }))
+      );
+    } else {
+      // Initialize shared inventory with current stock
+      products.forEach((p) => {
+        updateSharedInventory(p.id, p.stock);
+      });
+    }
+
+    // Listen for stock updates from other windows
+    const cleanup = onMessage((message) => {
+      if (message.type === "stock_update") {
+        setProducts((prev) =>
+          prev.map((p) =>
+            p.id === message.productId ? { ...p, stock: message.newStock } : p
+          )
+        );
+      }
+    });
+
+    // Initialize BroadcastChannel
+    initBroadcastChannel();
+
+    return () => {
+      if (cleanup) cleanup();
+    };
+  }, []);
 
   const filteredProducts = products.filter(
     (p) =>
@@ -40,6 +87,19 @@ function POSContent() {
       id: Date.now().toString(),
     };
     setProducts([...products, product]);
+    updateSharedInventory(product.id, product.stock);
+  };
+
+  const handleAddToCart = (product: Product) => {
+    if (product.stock > 0) {
+      // Reduce stock and sync across windows
+      const newStock = product.stock - 1;
+      updateSharedInventory(product.id, newStock);
+      setProducts((prev) =>
+        prev.map((p) => (p.id === product.id ? { ...p, stock: newStock } : p))
+      );
+      addToCart({ ...product, stock: newStock });
+    }
   };
 
   return (
@@ -66,6 +126,13 @@ function POSContent() {
               </div>
 
               <div className="flex items-center gap-3">
+                {terminalName && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-accent/10 border border-accent/20 rounded-lg">
+                    <Monitor className="w-4 h-4 text-accent" />
+                    <span className="text-sm font-medium text-accent">{terminalName}</span>
+                  </div>
+                )}
+
                 {isAdmin() && (
                   <Link href="/history">
                     <Button variant="outline" size="sm">
@@ -137,7 +204,7 @@ function POSContent() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    onAddToCart={addToCart}
+                    onAddToCart={handleAddToCart}
                   />
                 ))}
               </div>

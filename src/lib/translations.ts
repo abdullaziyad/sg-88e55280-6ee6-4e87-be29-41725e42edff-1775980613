@@ -107,6 +107,11 @@ export const translations = {
     allPayments: "All Payments",
     noTransactionsFound: "No transactions found",
     backToHome: "Back to Home",
+    
+    // Multi-Terminal
+    terminal: "Terminal",
+    multiWindowSync: "Multi-window sync enabled",
+    inventorySynced: "Inventory synced across all terminals",
   },
   dv: {
     // Header
@@ -216,5 +221,10 @@ export const translations = {
     allPayments: "ހުރިހާ ޕޭމަންޓްތައް",
     noTransactionsFound: "ވިއްކުންތައް ނެތް",
     backToHome: "ހޯމަށް ދޭ",
+    
+    // Multi-Terminal
+    terminal: "ޓާމިނަލް",
+    multiWindowSync: "މަލްޓި-ވިންޑޯ ސިންކް ހަދާފައި",
+    inventorySynced: "އިންވެންޓަރީ ހުރިހާ ޓާމިނަލްތަކުގައި ސިންކް",
   },
 };
