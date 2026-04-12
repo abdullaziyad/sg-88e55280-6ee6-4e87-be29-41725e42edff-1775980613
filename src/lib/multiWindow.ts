@@ -35,8 +35,11 @@ export function sendMessage(message: SyncMessage) {
 export function onMessage(callback: (message: SyncMessage) => void) {
   const channel = initBroadcastChannel();
   if (channel) {
-    channel.onmessage = (event) => callback(event.data);
+    const handler = (event: MessageEvent) => callback(event.data);
+    channel.addEventListener("message", handler);
+    return () => channel.removeEventListener("message", handler);
   }
+  return () => {};
 }
 
 // Generate unique terminal ID
