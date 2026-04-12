@@ -3,9 +3,11 @@ title: Create product catalog and management
 status: done
 priority: urgent
 type: feature
-tags: [catalog, products]
+tags:
+- catalog
+- products
 created_by: agent
-created_at: 2026-04-12T03:29:00Z
+created_at: 2026-04-12 03:29:00+00:00
 position: 1
 ---
 
