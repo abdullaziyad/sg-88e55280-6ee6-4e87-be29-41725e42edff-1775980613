@@ -6,6 +6,8 @@ export interface Product {
   stock: number;
   category: string;
   lowStockThreshold: number;
+  taxRate: number; // GST rate as percentage (0, 6, 8, etc.)
+  taxExempt: boolean;
 }
 
 export interface CartItem {
@@ -16,6 +18,8 @@ export interface CartItem {
 export interface Transaction {
   id: string;
   items: CartItem[];
+  subtotal: number;
+  taxAmount: number;
   total: number;
   paymentMethod: "cash" | "card";
   timestamp: string;
