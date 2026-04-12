@@ -1,6 +1,6 @@
 ---
 title: Build checkout flow and cart system
-status: todo
+status: done
 priority: high
 type: feature
 tags: [checkout, cart, sales]
@@ -13,9 +13,9 @@ position: 2
 Complete point-of-sale checkout interface. Cart management with add/remove items, quantity controls, running total calculation, payment processing, and receipt display.
 
 ## Checklist
-- [ ] Create Cart context for state management
-- [ ] Create CheckoutCart.tsx component with item list and totals
-- [ ] Create PaymentModal.tsx for completing transactions
-- [ ] Create Receipt.tsx component for printing/viewing
-- [ ] Build POS main page combining product selection + cart
-- [ ] Add transaction history storage
+- [x] Create Cart context for state management
+- [x] Create CheckoutCart.tsx component with item list and totals
+- [x] Create PaymentModal.tsx for completing transactions
+- [x] Create Receipt.tsx component for printing/viewing
+- [x] Build POS main page combining product selection + cart
+- [x] Add transaction history storage

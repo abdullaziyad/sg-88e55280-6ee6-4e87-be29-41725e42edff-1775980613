@@ -1,113 +1,129 @@
+import { useState } from "react";
 import { SEO } from "@/components/SEO";
-import { BoatGrid } from "@/components/BoatGrid";
-import { Button } from "@/components/ui/button";
+import { ProductCard } from "@/components/ProductCard";
+import { CheckoutCart } from "@/components/CheckoutCart";
+import { PaymentModal } from "@/components/PaymentModal";
+import { AddProductModal } from "@/components/AddProductModal";
+import { CartProvider, useCart } from "@/contexts/CartContext";
+import { mockProducts } from "@/lib/mockData";
+import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
-import { mockBoats } from "@/lib/mockData";
-import { Search, Anchor, Users, Shield } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Plus, Package } from "lucide-react";
 
-export default function HomePage() {
+function POSContent() {
+  const [products, setProducts] = useState<Product[]>(mockProducts);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showPayment, setShowPayment] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const { addToCart } = useCart();
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleAddProduct = (newProduct: Omit<Product, "id">) => {
+    const product: Product = {
+      ...newProduct,
+      id: Date.now().toString(),
+    };
+    setProducts([...products, product]);
+  };
+
   return (
     <>
       <SEO
-        title="Speed Boat Rentals - Book Your Ocean Adventure"
-        description="Discover premium speed boats for rent. Browse available boats, book your experience, and create unforgettable coastal memories."
+        title="Maldives Shop POS"
+        description="Point of sale system for small shops in the Maldives"
       />
-      
-      <div className="min-h-screen">
-        <section className="relative h-[600px] flex items-center justify-center overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-navy/90 to-primary/80 z-10" />
-          <img
-            src="https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=1600&auto=format&fit=crop"
-            alt="Speed boat on ocean"
-            className="absolute inset-0 w-full h-full object-cover"
-          />
-          
-          <div className="relative z-20 max-w-4xl mx-auto px-6 text-center space-y-6">
-            <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-bold text-white">
-              Your Ocean Adventure Awaits
-            </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
-              Discover premium speed boats for rent. Book in minutes and create unforgettable memories on the water.
-            </p>
-            
-            <div className="flex gap-3 max-w-xl mx-auto bg-white rounded-lg p-2 shadow-xl">
-              <Input
-                placeholder="Search by location..."
-                className="border-0 focus-visible:ring-0 text-base"
-              />
-              <Button size="lg" className="bg-accent hover:bg-accent/90">
-                <Search className="w-5 h-5 mr-2" />
-                Search
-              </Button>
-            </div>
-          </div>
-        </section>
 
-        <section className="py-16 px-6 bg-muted/30">
-          <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="space-y-3">
-              <div className="w-14 h-14 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
-                <Anchor className="w-7 h-7 text-accent" />
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                  <Package className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="font-heading font-bold text-xl text-foreground">
+                    Maldives Shop POS
+                  </h1>
+                  <p className="text-sm text-muted-foreground">Point of Sale System</p>
+                </div>
               </div>
-              <h3 className="font-heading text-xl font-semibold">Premium Fleet</h3>
-              <p className="text-muted-foreground">
-                Expertly maintained boats with top safety standards and modern amenities.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="w-14 h-14 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
-                <Users className="w-7 h-7 text-accent" />
-              </div>
-              <h3 className="font-heading text-xl font-semibold">Trusted Owners</h3>
-              <p className="text-muted-foreground">
-                Verified boat owners with excellent ratings and customer reviews.
-              </p>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="w-14 h-14 mx-auto bg-accent/10 rounded-full flex items-center justify-center">
-                <Shield className="w-7 h-7 text-accent" />
-              </div>
-              <h3 className="font-heading text-xl font-semibold">Safe & Secure</h3>
-              <p className="text-muted-foreground">
-                Comprehensive insurance coverage and 24/7 customer support for peace of mind.
-              </p>
             </div>
           </div>
-        </section>
+        </header>
 
-        <section className="py-20 px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="font-heading text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Featured Boats
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Explore our handpicked selection of premium speed boats available for your next adventure.
-              </p>
-            </div>
-            
-            <BoatGrid boats={mockBoats} showFilters={true} />
-          </div>
-        </section>
+        <main className="container mx-auto px-4 py-6">
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products by name, SKU, or category..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Button onClick={() => setShowAddProduct(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </div>
 
-        <footer className="bg-primary text-primary-foreground py-12 px-6">
-          <div className="max-w-7xl mx-auto text-center">
-            <h3 className="font-heading text-2xl font-bold mb-2">Ready to Set Sail?</h3>
-            <p className="text-primary-foreground/80 mb-6">
-              Book your speed boat experience today and discover the freedom of the open water.
-            </p>
-            <Button size="lg" variant="secondary" className="font-semibold">
-              Browse All Boats
-            </Button>
-            
-            <div className="mt-12 pt-8 border-t border-primary-foreground/20 text-sm text-primary-foreground/60">
-              <p>© 2026 Speed Boat Rentals. All rights reserved.</p>
+              <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={addToCart}
+                  />
+                ))}
+              </div>
+
+              {filteredProducts.length === 0 && (
+                <div className="text-center py-12">
+                  <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No products found</p>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-1">
+              <div className="sticky top-6">
+                <CheckoutCart onCheckout={() => setShowPayment(true)} />
+              </div>
             </div>
           </div>
-        </footer>
+        </main>
       </div>
+
+      <PaymentModal
+        open={showPayment}
+        onClose={() => setShowPayment(false)}
+        onComplete={() => setShowPayment(false)}
+      />
+
+      <AddProductModal
+        open={showAddProduct}
+        onClose={() => setShowAddProduct(false)}
+        onSave={handleAddProduct}
+      />
     </>
+  );
+}
+
+export default function Home() {
+  return (
+    <CartProvider>
+      <POSContent />
+    </CartProvider>
   );
 }
