@@ -92,6 +92,21 @@ export const translations = {
     cashier: "Cashier",
     accessDenied: "Access Denied",
     cashierOnly: "Cashiers can only process sales",
+    adminOnly: "This page is only accessible to administrators",
+    
+    // History Page
+    transactionHistory: "Transaction History",
+    viewPastSales: "View all past sales and tax breakdowns",
+    backToPos: "Back to POS",
+    totalTransactions: "Total Transactions",
+    totalSales: "Total Sales",
+    totalGst: "Total GST Collected",
+    netSales: "Net Sales",
+    searchByReceiptNumber: "Search by receipt number...",
+    filterByPayment: "Filter by payment",
+    allPayments: "All Payments",
+    noTransactionsFound: "No transactions found",
+    backToHome: "Back to Home",
   },
   dv: {
     // Header
@@ -186,5 +201,20 @@ export const translations = {
     cashier: "ކެޝިއާރ",
     accessDenied: "ވަންނަން ހުއްދަނެތް",
     cashierOnly: "ކެޝިއާރުންނަށް ވިއްކުން އެކަނި ކުރެވޭނެ",
+    adminOnly: "މި ޞަފްހާ އެޑްމިނުންނަށް އެކަނި",
+    
+    // History Page
+    transactionHistory: "ވިއްކުމުގެ ތާރީޚް",
+    viewPastSales: "ކުރިން ވިއްކި ތަކެތި އަދި ޓެކްސް ބަލާލާ",
+    backToPos: "POS އަށް ދޭ",
+    totalTransactions: "ޖުމްލަ ވިއްކުންތައް",
+    totalSales: "ޖުމްލަ ވިއްކުން",
+    totalGst: "ޖުމްލަ GST ހޯދީ",
+    netSales: "ނެޓް ވިއްކުން",
+    searchByReceiptNumber: "ރަސީދު ނަންބަރުން ހޯދާ...",
+    filterByPayment: "ޕޭމަންޓް ފިލްޓަރކުރޭ",
+    allPayments: "ހުރިހާ ޕޭމަންޓްތައް",
+    noTransactionsFound: "ވިއްކުންތައް ނެތް",
+    backToHome: "ހޯމަށް ދޭ",
   },
 };
