@@ -16,7 +16,7 @@ import { Product } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings } from "lucide-react";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -138,12 +138,20 @@ function POSContent() {
                 )}
 
                 {isAdmin() && (
-                  <Link href="/history">
-                    <Button variant="outline" size="sm">
-                      <History className="w-4 h-4 mr-2" />
-                      {t("transactionHistory")}
-                    </Button>
-                  </Link>
+                  <>
+                    <Link href="/history">
+                      <Button variant="outline" size="sm">
+                        <History className="w-4 h-4 mr-2" />
+                        {t("transactionHistory")}
+                      </Button>
+                    </Link>
+                    <Link href="/settings">
+                      <Button variant="outline" size="sm">
+                        <Settings className="w-4 h-4 mr-2" />
+                        {t("settings")}
+                      </Button>
+                    </Link>
+                  </>
                 )}
 
                 {user && (
@@ -256,7 +264,6 @@ function POSContent() {
         onClose={() => setShowInvoice(false)}
         onSuccess={() => {
           setShowInvoice(false);
-          // Show success message
           alert(t("invoiceCreated"));
         }}
       />
@@ -266,7 +273,6 @@ function POSContent() {
         onClose={() => setShowQuotation(false)}
         onSuccess={() => {
           setShowQuotation(false);
-          // Show success message
           alert(t("quotationCreated"));
         }}
       />
