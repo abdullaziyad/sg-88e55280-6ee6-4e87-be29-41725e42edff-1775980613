@@ -26,6 +26,9 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
     lowStockThreshold: editProduct?.lowStockThreshold.toString() || "10",
     taxRate: editProduct?.taxRate.toString() || "0",
     taxExempt: editProduct?.taxExempt ?? false,
+    hasExpiry: editProduct?.hasExpiry ?? false,
+    expiryDate: editProduct?.expiryDate || "",
+    batchNumber: editProduct?.batchNumber || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,16 +42,19 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
       lowStockThreshold: parseInt(formData.lowStockThreshold),
       taxRate: parseFloat(formData.taxRate),
       taxExempt: formData.taxExempt,
+      hasExpiry: formData.hasExpiry,
+      expiryDate: formData.hasExpiry ? formData.expiryDate : undefined,
+      batchNumber: formData.hasExpiry ? formData.batchNumber : undefined,
     });
     onClose();
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-heading">
-            {t("addNewProduct")}
+            {editProduct ? t("editProduct") : t("addNewProduct")}
           </DialogTitle>
         </DialogHeader>
 
@@ -155,6 +161,44 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
                     <SelectItem value="8">8% - {t("touristRate")}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="hasExpiry">{t("trackExpiry")}</Label>
+                <p className="text-xs text-muted-foreground">{t("trackExpiryDescription")}</p>
+              </div>
+              <Switch
+                id="hasExpiry"
+                checked={formData.hasExpiry}
+                onCheckedChange={(checked) => setFormData({ ...formData, hasExpiry: checked })}
+              />
+            </div>
+
+            {formData.hasExpiry && (
+              <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                <div className="space-y-2">
+                  <Label htmlFor="expiryDate">{t("expiryDate")}</Label>
+                  <Input
+                    id="expiryDate"
+                    type="date"
+                    value={formData.expiryDate}
+                    onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="batchNumber">{t("batchNumber")}</Label>
+                  <Input
+                    id="batchNumber"
+                    value={formData.batchNumber}
+                    onChange={(e) => setFormData({ ...formData, batchNumber: e.target.value })}
+                    placeholder={t("batchPlaceholder")}
+                  />
+                </div>
               </div>
             )}
           </div>

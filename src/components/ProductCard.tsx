@@ -2,7 +2,7 @@ import { Product } from "@/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Package } from "lucide-react";
+import { Plus, Package, AlertTriangle, Calendar } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProductCardProps {
@@ -14,6 +14,30 @@ interface ProductCardProps {
 export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) {
   const isLowStock = product.stock <= product.lowStockThreshold;
   const { t } = useLanguage();
+
+  const getExpiryStatus = () => {
+    if (!product.hasExpiry || !product.expiryDate) return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expiryDate = new Date(product.expiryDate);
+    expiryDate.setHours(0, 0, 0, 0);
+    
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilExpiry < 0) {
+      return { status: "expired", days: Math.abs(daysUntilExpiry), variant: "destructive" as const };
+    } else if (daysUntilExpiry === 0) {
+      return { status: "expiresToday", days: 0, variant: "destructive" as const };
+    } else if (daysUntilExpiry <= 7) {
+      return { status: "expiringSoon", days: daysUntilExpiry, variant: "destructive" as const };
+    } else if (daysUntilExpiry <= 30) {
+      return { status: "expiringThisMonth", days: daysUntilExpiry, variant: "secondary" as const };
+    }
+    return null;
+  };
+
+  const expiryStatus = getExpiryStatus();
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -43,6 +67,39 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             </Badge>
           </div>
 
+          {product.hasExpiry && product.expiryDate && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {t("expiry")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(product.expiryDate).toLocaleDateString()}
+              </span>
+            </div>
+          )}
+
+          {product.batchNumber && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">{t("batch")}</span>
+              <span className="text-xs font-mono text-muted-foreground">
+                {product.batchNumber}
+              </span>
+            </div>
+          )}
+
+          {expiryStatus && (
+            <div className="pt-2">
+              <Badge variant={expiryStatus.variant} className="w-full justify-center text-xs">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                {expiryStatus.status === "expired" && `${t("expired")} (${expiryStatus.days} ${t("daysAgo")})`}
+                {expiryStatus.status === "expiresToday" && t("expiresToday")}
+                {expiryStatus.status === "expiringSoon" && `${t("expires")} ${expiryStatus.days} ${t("daysLeft")}`}
+                {expiryStatus.status === "expiringThisMonth" && `${expiryStatus.days} ${t("daysLeft")}`}
+              </Badge>
+            </div>
+          )}
+
           <div className="flex items-center justify-between pt-2 border-t">
             <span className="text-sm font-medium">{t("price")}</span>
             <span className="text-lg font-heading font-bold text-primary">
@@ -68,7 +125,7 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             size="sm"
             className="flex-1"
             onClick={() => onAddToCart(product)}
-            disabled={product.stock === 0}
+            disabled={product.stock === 0 || expiryStatus?.status === "expired"}
           >
             <Plus className="w-4 h-4 mr-1" />
             {t("addToCart")}

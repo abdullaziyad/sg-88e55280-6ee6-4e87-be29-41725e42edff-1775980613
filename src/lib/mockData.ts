@@ -1,5 +1,12 @@
 import type { Product } from "@/types";
 
+// Helper to get dates relative to today
+const getDateOffset = (days: number): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().split("T")[0];
+};
+
 export const mockProducts: Product[] = [
   {
     id: "1",
@@ -10,7 +17,8 @@ export const mockProducts: Product[] = [
     category: "Groceries",
     lowStockThreshold: 20,
     taxRate: 0,
-    taxExempt: true, // Basic food items are GST exempt
+    taxExempt: true,
+    hasExpiry: false,
   },
   {
     id: "2",
@@ -21,7 +29,10 @@ export const mockProducts: Product[] = [
     category: "Groceries",
     lowStockThreshold: 15,
     taxRate: 0,
-    taxExempt: true, // Basic food items are GST exempt
+    taxExempt: true,
+    hasExpiry: true,
+    expiryDate: getDateOffset(120), // Expires in 4 months
+    batchNumber: "OIL2024-03",
   },
   {
     id: "3",
@@ -32,7 +43,10 @@ export const mockProducts: Product[] = [
     category: "Snacks",
     lowStockThreshold: 40,
     taxRate: 8,
-    taxExempt: false, // Processed foods subject to 8% GST
+    taxExempt: false,
+    hasExpiry: true,
+    expiryDate: getDateOffset(45), // Expires in 1.5 months
+    batchNumber: "NOO-2024-12",
   },
   {
     id: "4",
@@ -43,7 +57,10 @@ export const mockProducts: Product[] = [
     category: "Beverages",
     lowStockThreshold: 30,
     taxRate: 8,
-    taxExempt: false, // Beverages subject to 8% GST
+    taxExempt: false,
+    hasExpiry: true,
+    expiryDate: getDateOffset(5), // Expires in 5 days - WARNING
+    batchNumber: "COKE-DEC24",
   },
   {
     id: "5",
@@ -54,7 +71,10 @@ export const mockProducts: Product[] = [
     category: "Personal Care",
     lowStockThreshold: 10,
     taxRate: 6,
-    taxExempt: false, // Personal care items subject to 6% GST
+    taxExempt: false,
+    hasExpiry: true,
+    expiryDate: getDateOffset(180), // Expires in 6 months
+    batchNumber: "SHP-2025-06",
   },
   {
     id: "6",
@@ -65,7 +85,8 @@ export const mockProducts: Product[] = [
     category: "Groceries",
     lowStockThreshold: 25,
     taxRate: 0,
-    taxExempt: true, // Basic food items are GST exempt
+    taxExempt: true,
+    hasExpiry: false,
   },
   {
     id: "7",
@@ -76,7 +97,8 @@ export const mockProducts: Product[] = [
     category: "Stationery",
     lowStockThreshold: 15,
     taxRate: 6,
-    taxExempt: false, // Stationery subject to 6% GST
+    taxExempt: false,
+    hasExpiry: false,
   },
   {
     id: "8",
@@ -87,6 +109,9 @@ export const mockProducts: Product[] = [
     category: "Beverages",
     lowStockThreshold: 30,
     taxRate: 8,
-    taxExempt: false, // Bottled water subject to 8% GST
+    taxExempt: false,
+    hasExpiry: true,
+    expiryDate: getDateOffset(-3), // Expired 3 days ago - EXPIRED
+    batchNumber: "H2O-NOV24",
   },
 ];
