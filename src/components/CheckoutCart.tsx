@@ -4,14 +4,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingCart, FileText, Receipt } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CheckoutCartProps {
   onCheckout: () => void;
+  onCreateInvoice?: () => void;
+  onCreateQuotation?: () => void;
 }
 
-export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
+export function CheckoutCart({ onCheckout, onCreateInvoice, onCreateQuotation }: CheckoutCartProps) {
   const { cart, removeFromCart, updateQuantity, getSubtotal, getTaxAmount, getTotal } = useCart();
   const { t } = useLanguage();
 
@@ -131,9 +133,36 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
             </span>
           </div>
 
-          <Button className="w-full" size="lg" onClick={onCheckout}>
-            {t("completePayment")}
-          </Button>
+          <div className="space-y-2 pt-2">
+            <Button className="w-full" size="lg" onClick={onCheckout}>
+              <Receipt className="w-4 h-4 mr-2" />
+              {t("completePayment")}
+            </Button>
+
+            {onCreateInvoice && (
+              <Button
+                variant="outline"
+                className="w-full"
+                size="sm"
+                onClick={onCreateInvoice}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {t("createInvoice")}
+              </Button>
+            )}
+
+            {onCreateQuotation && (
+              <Button
+                variant="outline"
+                className="w-full"
+                size="sm"
+                onClick={onCreateQuotation}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {t("createQuotation")}
+              </Button>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

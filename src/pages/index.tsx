@@ -5,6 +5,8 @@ import { CheckoutCart } from "@/components/CheckoutCart";
 import { PaymentModal } from "@/components/PaymentModal";
 import { AddProductModal } from "@/components/AddProductModal";
 import { LoginModal } from "@/components/LoginModal";
+import { InvoiceModal } from "@/components/InvoiceModal";
+import { QuotationModal } from "@/components/QuotationModal";
 import { LanguageSwitch } from "@/components/LanguageSwitch";
 import { CartProvider, useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -30,8 +32,10 @@ function POSContent() {
   const [showPayment, setShowPayment] = useState(false);
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [showQuotation, setShowQuotation] = useState(false);
   const [terminalName, setTerminalName] = useState("");
-  const { addToCart } = useCart();
+  const { addToCart, cart } = useCart();
   const { t } = useLanguage();
   const { user, logout, isAdmin, isCashier } = useAuth();
 
@@ -219,7 +223,11 @@ function POSContent() {
 
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <CheckoutCart onCheckout={() => setShowPayment(true)} />
+                <CheckoutCart
+                  onCheckout={() => setShowPayment(true)}
+                  onCreateInvoice={() => setShowInvoice(true)}
+                  onCreateQuotation={() => setShowQuotation(true)}
+                />
               </div>
             </div>
           </div>
@@ -241,6 +249,26 @@ function POSContent() {
       <LoginModal
         open={showLogin}
         onClose={() => setShowLogin(false)}
+      />
+
+      <InvoiceModal
+        open={showInvoice}
+        onClose={() => setShowInvoice(false)}
+        onSuccess={() => {
+          setShowInvoice(false);
+          // Show success message
+          alert(t("invoiceCreated"));
+        }}
+      />
+
+      <QuotationModal
+        open={showQuotation}
+        onClose={() => setShowQuotation(false)}
+        onSuccess={() => {
+          setShowQuotation(false);
+          // Show success message
+          alert(t("quotationCreated"));
+        }}
       />
     </>
   );
