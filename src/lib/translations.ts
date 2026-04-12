@@ -323,7 +323,7 @@ export const translations = {
     // Add Product Modal
     addNewProduct: "އާ ތަކެއްޗެއް އިތުރުކުރޭ",
     productName: "ތަކެތީގެ ނަން",
-    productNamePlaceholder: "ތަކެތީގެ ނަން ލިޔުއްވާ",
+    productNamePlaceholder: "ތަކެތީގެ ނަން ލިޔޭ",
     sku: "އެސްކޭޔޫ",
     skuPlaceholder: "އެސްކޭޔޫ ކޯޑް ލިޔޭ",
     price: "ބާ (ރުފިޔާ)",
@@ -351,7 +351,7 @@ export const translations = {
     receiptNumber: "ރަސީދު ނަންބަރު",
     receiptItems: "ތަކެތި",
     subtotal: "ޖުމްލަ",
-    printReceipt: "ރަސީދު ޕްރިންޓް ކުރޭ",
+    printReceipt: "ރަސީދު ޕްރިންޓްކުރޭ",
     thankYou: "ގަންނަވާތީ ޝުކުރިއްޔާ!",
     visitAgain: "އަލުން ވަޑައިގެންފިއްޔާ އުއްމީދުކުރަން",
     
@@ -467,7 +467,7 @@ export const translations = {
     manageCreditBills: "ކަސްޓަމަރުންގެ ކްރެޑިޓް ބިލް އަދި ޕޭމަންޓް މެނޭޖް",
     creditBillDetails: "ކްރެޑިޓް ބިލް މަޢުލޫމާތު",
     creditBillCreated: "ކްރެޑިޓް ބިލް ހައްދަވައިފި!",
-    customerNamePhoneRequired: "ކަސްޓަމަރގެ ނަންބަރު",
+    customerNamePhoneRequired: "ކަސްޓަމަރގެ ނަމާއި ފޯން ލާޒިމް",
     recordPayment: "ޕޭމަންޓް ރެކޯޑް ކުރޭ",
     paymentAmount: "ޕޭމަންޓް އަދަދު",
     invalidPaymentAmount: "ޕޭމަންޓް އަދަދު ރަނގަޅެއް ނޫން",
@@ -485,7 +485,7 @@ export const translations = {
     notes: "ނޯޓްސް",
     
     // Settings Page
-    settings: "ސިސްޓަމް ޕްރިފަރެންސް",
+    settings: "ސެޓިންގްސް",
     customizeSettings: "POS ސިސްޓަމް ކަސްޓަމައިޒް ކުރޭ",
     resetToDefault: "ޑިފޯލްޓަށް ރީސެޓް",
     shopDetails: "ދުކާން",
@@ -554,4 +554,25 @@ export const translations = {
     lowStockAlert: "މަދު ސްޓޮކް އެލާޓް",
     productsNeedingRestock: "އިތުރުކުރަން ޖެހޭ ތަކެތި",
     currentStock: "މިހާރު ހުރި ސްޓޮކް",
-    threshold: "
+    threshold: "ތަރެޝްހޯލްޑް",
+    allStockNormal: "ހުރިހާ ސްޓޮކްއެއް ރަނގަޅު",
+    
+    // Expiry Tracking
+    trackExpiry: "ތާރީޚު ހަމަވާ މުއްދަތު ޓްރެކް",
+    trackExpiryDescription: "މި ތަކެއްޗަށް ތާރީޚު ހަމަވާ ޓްރެކިން ހަދާ",
+    expiryDate: "ތާރީޚު ހަމަވާ",
+    batchNumber: "ބެޗް ނަންބަރު",
+    batchPlaceholder: "މިސާލު: BATCH-2024-01",
+    expiry: "ހަމަވާނީ",
+    batch: "ބެޗް",
+    expired: "ހަމަވެއްޖެ",
+    expiresToday: "މިއަދު ހަމަވޭ",
+    expires: "ހަމަވާނީ",
+    daysLeft: "ދުވަސް",
+    daysAgo: "ދުވަސް ކުރިން",
+    expiryAlert: "ތާރީޚު ހަމަވުމުގެ އެލާޓް",
+    productsExpiringSoon: "30 ދުވަހުގެ ތެރޭގައި ތާރީޚު ހަމަވާ ތަކެތި",
+    expiryStatus: "ތާރީޚު ހަމަވުމުގެ ހާލަތު",
+    noExpiringProducts: "އަވަހަށް ތާރީޚު ހަމަވާ ތަކެތި ނެތް",
+  },
+};
