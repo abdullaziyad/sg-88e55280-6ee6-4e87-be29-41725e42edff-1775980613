@@ -6,54 +6,26 @@
 
 @layer base {
   :root {
-    /* Nautical design system */
-    --background: 40 30% 96%;
-    --foreground: 220 25% 15%;
+    --background: 0 0% 100%;
+    --foreground: 200 25% 15%;
     --card: 0 0% 100%;
-    --card-foreground: 220 25% 15%;
+    --card-foreground: 200 25% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 25% 15%;
-    --primary: 220 40% 20%;
+    --popover-foreground: 200 25% 15%;
+    --primary: 180 60% 35%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 90%;
-    --secondary-foreground: 220 25% 15%;
-    --muted: 220 20% 90%;
-    --muted-foreground: 220 20% 40%;
-    --accent: 200 90% 50%;
+    --secondary: 200 15% 95%;
+    --secondary-foreground: 200 25% 15%;
+    --muted: 200 15% 95%;
+    --muted-foreground: 200 20% 40%;
+    --accent: 25 85% 55%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 85%;
-    --input: 220 20% 85%;
-    --ring: 200 90% 50%;
+    --border: 200 15% 90%;
+    --input: 200 15% 90%;
+    --ring: 180 60% 35%;
     --radius: 0.5rem;
-    
-    /* Custom tokens */
-    --ocean: 200 90% 50%;
-    --navy: 220 40% 20%;
-    --sand: 40 30% 96%;
-  }
-
-  .dark {
-    --background: 220 40% 10%;
-    --foreground: 0 0% 95%;
-    --card: 220 35% 15%;
-    --card-foreground: 0 0% 95%;
-    --popover: 220 35% 15%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 200 90% 50%;
-    --primary-foreground: 220 40% 10%;
-    --secondary: 220 30% 20%;
-    --secondary-foreground: 0 0% 95%;
-    --muted: 220 30% 20%;
-    --muted-foreground: 220 15% 65%;
-    --accent: 200 90% 50%;
-    --accent-foreground: 220 40% 10%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 220 30% 25%;
-    --input: 220 30% 25%;
-    --ring: 200 90% 50%;
   }
 }
 
@@ -63,9 +35,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Work Sans', system-ui, sans-serif;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

@@ -1,20 +1,20 @@
 ---
-title: User dashboard for bookings
+title: Create sales dashboard and reporting
 status: todo
 priority: medium
 type: feature
-tags: [dashboard]
+tags: [dashboard, analytics]
 created_by: agent
-created_at: 2026-04-12T03:20:49Z
-position: 3
+created_at: 2026-04-12T03:29:00Z
+position: 4
 ---
 
 ## Notes
-Dashboard showing user's upcoming and past bookings. Route: /dashboard
+Sales overview dashboard with today's revenue, transaction count, top-selling products, and recent transaction list. Simple metrics for shop owners to track daily performance.
 
 ## Checklist
-- [ ] Create dashboard.tsx page
-- [ ] BookingCard component: boat photo, date/time, status badge, view details button
-- [ ] Tabs: Upcoming / Past bookings
-- [ ] Empty state: "No bookings yet" with CTA to browse boats
-- [ ] Retrieve bookings from localStorage
+- [ ] Create Dashboard.tsx with sales metrics cards
+- [ ] Add today's revenue and transaction count
+- [ ] Create TransactionHistory.tsx component
+- [ ] Add top-selling products widget
+- [ ] Build navigation between dashboard, POS, inventory, and products
