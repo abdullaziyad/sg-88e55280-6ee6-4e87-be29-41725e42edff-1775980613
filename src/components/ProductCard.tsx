@@ -41,35 +41,35 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between mb-4">
+      <CardContent className="pt-4 pb-3 px-4">
+        <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="font-heading font-semibold text-lg text-foreground">
+            <h3 className="font-heading font-semibold text-base text-foreground">
               {product.name}
             </h3>
-            <p className="text-sm text-muted-foreground mt-1">{t("sku")}: {product.sku}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("sku")}: {product.sku}</p>
           </div>
-          <Package className="w-5 h-5 text-muted-foreground" />
+          <Package className="w-4 h-4 text-muted-foreground" />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{t("category")}</span>
-            <Badge variant="secondary" className="text-xs">
+            <span className="text-xs text-muted-foreground">{t("category")}</span>
+            <Badge variant="secondary" className="text-xs py-0">
               {product.category}
             </Badge>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Stock</span>
-            <Badge variant={isLowStock ? "destructive" : "secondary"} className="text-xs">
+            <span className="text-xs text-muted-foreground">Stock</span>
+            <Badge variant={isLowStock ? "destructive" : "secondary"} className="text-xs py-0">
               {product.stock} units
             </Badge>
           </div>
 
           {product.hasExpiry && product.expiryDate && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground flex items-center gap-1">
+              <span className="text-xs text-muted-foreground flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
                 {t("expiry")}
               </span>
@@ -81,7 +81,7 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
 
           {product.batchNumber && (
             <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{t("batch")}</span>
+              <span className="text-xs text-muted-foreground">{t("batch")}</span>
               <span className="text-xs font-mono text-muted-foreground">
                 {product.batchNumber}
               </span>
@@ -89,8 +89,8 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
           )}
 
           {expiryStatus && (
-            <div className="pt-2">
-              <Badge variant={expiryStatus.variant} className="w-full justify-center text-xs">
+            <div className="pt-1.5">
+              <Badge variant={expiryStatus.variant} className="w-full justify-center text-xs py-0.5">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 {expiryStatus.status === "expired" && `${t("expired")} (${expiryStatus.days} ${t("daysAgo")})`}
                 {expiryStatus.status === "expiresToday" && t("expiresToday")}
@@ -100,21 +100,21 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-2 border-t">
-            <span className="text-sm font-medium">{t("price")}</span>
-            <span className="text-lg font-heading font-bold text-primary">
+          <div className="flex items-center justify-between pt-1.5 border-t">
+            <span className="text-xs font-medium">{t("price")}</span>
+            <span className="text-base font-heading font-bold text-primary">
               {t("mvr")} {product.price.toFixed(2)}
             </span>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="gap-2">
+      <CardFooter className="gap-2 px-4 py-3">
         {onEdit && (
           <Button
             variant="outline"
             size="sm"
-            className="flex-1"
+            className="flex-1 h-8 text-xs"
             onClick={() => onEdit(product)}
           >
             Edit
@@ -123,11 +123,11 @@ export function ProductCard({ product, onAddToCart, onEdit }: ProductCardProps) 
         {onAddToCart && (
           <Button
             size="sm"
-            className="flex-1"
+            className="flex-1 h-8 text-xs"
             onClick={() => onAddToCart(product)}
             disabled={product.stock === 0 || expiryStatus?.status === "expired"}
           >
-            <Plus className="w-4 h-4 mr-1" />
+            <Plus className="w-3 h-3 mr-1" />
             {t("addToCart")}
           </Button>
         )}
