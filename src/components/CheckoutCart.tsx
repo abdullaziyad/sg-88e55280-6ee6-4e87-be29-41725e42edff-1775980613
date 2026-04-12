@@ -3,6 +3,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, Trash2, ShoppingCart } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -11,7 +12,7 @@ interface CheckoutCartProps {
 }
 
 export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
-  const { cart, removeFromCart, updateQuantity, getTotal } = useCart();
+  const { cart, removeFromCart, updateQuantity, getSubtotal, getTaxAmount, getTotal } = useCart();
   const { t } = useLanguage();
 
   if (cart.length === 0) {
@@ -48,9 +49,16 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-sm truncate">{item.product.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("mvr")} {item.product.price.toFixed(2)} each
-                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {t("mvr")} {item.product.price.toFixed(2)}
+                    </p>
+                    {!item.product.taxExempt && (
+                      <Badge variant="outline" className="text-xs h-4 px-1">
+                        {item.product.taxRate}% GST
+                      </Badge>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -102,8 +110,21 @@ export function CheckoutCart({ onCheckout }: CheckoutCartProps) {
           </div>
         </ScrollArea>
 
-        <div className="mt-6 pt-6 border-t space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="mt-6 pt-6 border-t space-y-3">
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center justify-between text-muted-foreground">
+              <span>{t("subtotal")}</span>
+              <span>{t("mvr")} {getSubtotal().toFixed(2)}</span>
+            </div>
+            {getTaxAmount() > 0 && (
+              <div className="flex items-center justify-between text-muted-foreground">
+                <span>{t("gst")}</span>
+                <span>{t("mvr")} {getTaxAmount().toFixed(2)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t">
             <span className="text-lg font-heading font-semibold">{t("total")}</span>
             <span className="text-2xl font-heading font-bold text-primary">
               {t("mvr")} {getTotal().toFixed(2)}

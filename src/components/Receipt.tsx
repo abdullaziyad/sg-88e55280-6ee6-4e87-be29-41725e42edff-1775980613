@@ -50,7 +50,12 @@ export function Receipt({ transaction, onPrint }: ReceiptProps) {
                   <tr key={item.product.id}>
                     <td className="py-2 pr-2">
                       <p className="font-medium truncate max-w-[150px]">{item.product.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.product.price.toFixed(2)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.product.price.toFixed(2)}
+                        {!item.product.taxExempt && (
+                          <span className="ml-1">({item.product.taxRate}% GST)</span>
+                        )}
+                      </p>
                     </td>
                     <td className="py-2 text-center">{item.quantity}</td>
                     <td className="py-2 text-right">{(item.product.price * item.quantity).toFixed(2)}</td>
@@ -65,8 +70,14 @@ export function Receipt({ transaction, onPrint }: ReceiptProps) {
           <div className="w-full space-y-1">
             <div className="flex justify-between text-muted-foreground">
               <span>{t("subtotal")}</span>
-              <span>{transaction.total.toFixed(2)}</span>
+              <span>{transaction.subtotal.toFixed(2)}</span>
             </div>
+            {transaction.taxAmount > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>{t("gst")}</span>
+                <span>{transaction.taxAmount.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-lg pt-2 border-t">
               <span>{t("total")}</span>
               <span>{t("mvr")} {transaction.total.toFixed(2)}</span>

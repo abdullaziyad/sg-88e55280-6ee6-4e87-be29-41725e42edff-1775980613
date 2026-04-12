@@ -67,6 +67,15 @@ export const translations = {
     thankYou: "Thank you for your purchase!",
     visitAgain: "Please visit us again",
     
+    // Tax
+    gst: "GST",
+    gstRate: "GST Rate",
+    taxExempt: "Tax Exempt",
+    taxExemptDescription: "Basic food items exempt from GST",
+    selectGstRate: "Select GST rate",
+    standardRate: "Standard Rate",
+    touristRate: "Tourist Goods & Services",
+    
     // Authentication
     login: "Login",
     logout: "Logout",
@@ -151,6 +160,15 @@ export const translations = {
     printReceipt: "ރަސީދު ޕްރިންޓްކުރޭ",
     thankYou: "ގަންނަވާތީ ޝުކުރިއްޔާ!",
     visitAgain: "އަލުން ވަޑައިގެންފިއްޔާ އުއްމީދުކުރަން",
+    
+    // Tax
+    gst: "GST",
+    gstRate: "GST ރޭޓް",
+    taxExempt: "ޓެކްސް އެކްޒެމްޓް",
+    taxExemptDescription: "މައި ކާބޯތަކެއްޗަކީ GST އިން އެކްޒެމްޓް",
+    selectGstRate: "GST ރޭޓް ހޮވާ",
+    standardRate: "ސްޓޭންޑަރޑް ރޭޓް",
+    touristRate: "ޓޫރިސްޓް ތަކެތި އަދި ހިދުމަތް",
     
     // Authentication
     login: "ލޮގިން",

@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Product } from "@/types";
 
@@ -22,6 +24,8 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
     stock: editProduct?.stock.toString() || "",
     category: editProduct?.category || "",
     lowStockThreshold: editProduct?.lowStockThreshold.toString() || "10",
+    taxRate: editProduct?.taxRate.toString() || "0",
+    taxExempt: editProduct?.taxExempt ?? false,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,6 +37,8 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
       stock: parseInt(formData.stock),
       category: formData.category,
       lowStockThreshold: parseInt(formData.lowStockThreshold),
+      taxRate: parseFloat(formData.taxRate),
+      taxExempt: formData.taxExempt,
     });
     onClose();
   };
@@ -119,6 +125,38 @@ export function AddProductModal({ open, onClose, onSave, editProduct }: AddProdu
               onChange={(e) => setFormData({ ...formData, lowStockThreshold: e.target.value })}
               placeholder={t("thresholdPlaceholder")}
             />
+          </div>
+
+          <div className="border-t pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="taxExempt">{t("taxExempt")}</Label>
+                <p className="text-xs text-muted-foreground">{t("taxExemptDescription")}</p>
+              </div>
+              <Switch
+                id="taxExempt"
+                checked={formData.taxExempt}
+                onCheckedChange={(checked) => setFormData({ ...formData, taxExempt: checked, taxRate: checked ? "0" : formData.taxRate })}
+              />
+            </div>
+
+            {!formData.taxExempt && (
+              <div className="space-y-2">
+                <Label htmlFor="taxRate">{t("gstRate")}</Label>
+                <Select
+                  value={formData.taxRate}
+                  onValueChange={(value) => setFormData({ ...formData, taxRate: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("selectGstRate")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="6">6% - {t("standardRate")}</SelectItem>
+                    <SelectItem value="8">8% - {t("touristRate")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
