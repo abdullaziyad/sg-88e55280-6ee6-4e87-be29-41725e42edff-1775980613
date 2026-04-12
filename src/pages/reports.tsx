@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -65,6 +66,29 @@ export default function ReportsPage() {
   const topProducts = getTopSellingProducts(10, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]);
   const lowStockProducts = getLowStockProducts(mockProducts);
 
+  const getExpiryProducts = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return mockProducts
+      .filter((p) => p.hasExpiry && p.expiryDate)
+      .map((p) => {
+        const expiryDate = new Date(p.expiryDate!);
+        expiryDate.setHours(0, 0, 0, 0);
+        const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        
+        return {
+          ...p,
+          daysUntilExpiry,
+          status: daysUntilExpiry < 0 ? "expired" : daysUntilExpiry === 0 ? "today" : daysUntilExpiry <= 7 ? "critical" : daysUntilExpiry <= 30 ? "warning" : "normal",
+        };
+      })
+      .filter((p) => p.daysUntilExpiry <= 30)
+      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
+  };
+
+  const expiryProducts = getExpiryProducts();
+
   const handlePrintDayEnd = () => {
     window.print();
   };
@@ -88,6 +112,24 @@ export default function ReportsPage() {
 
     const filename = `sales_report_${startDate.toISOString().split("T")[0]}_to_${endDate.toISOString().split("T")[0]}`;
     exportToCSV(data, filename);
+  };
+
+  const getExpiryBadgeVariant = (status: string) => {
+    switch (status) {
+      case "expired": return "destructive";
+      case "today": return "destructive";
+      case "critical": return "destructive";
+      case "warning": return "secondary";
+      default: return "outline";
+    }
+  };
+
+  const getExpiryStatusText = (status: string, days: number) => {
+    if (status === "expired") return `${t("expired")} (${Math.abs(days)} ${t("daysAgo")})`;
+    if (status === "today") return t("expiresToday");
+    if (status === "critical") return `${t("expires")} ${days} ${t("daysLeft")}`;
+    if (status === "warning") return `${days} ${t("daysLeft")}`;
+    return "";
   };
 
   return (
@@ -119,6 +161,7 @@ export default function ReportsPage() {
               <TabsTrigger value="sales">{t("salesReports")}</TabsTrigger>
               <TabsTrigger value="products">{t("productReports")}</TabsTrigger>
               <TabsTrigger value="inventory">{t("inventoryReport")}</TabsTrigger>
+              <TabsTrigger value="expiry">{t("expiryAlert")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dayend" className="space-y-6">
@@ -417,6 +460,51 @@ export default function ReportsPage() {
                       {lowStockProducts.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={4} className="text-center text-muted-foreground">{t("allStockNormal")}</TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="expiry" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="font-heading flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                    {t("expiryAlert")}
+                  </CardTitle>
+                  <CardDescription>{t("productsExpiringSoon")}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("product")}</TableHead>
+                        <TableHead>{t("sku")}</TableHead>
+                        <TableHead>{t("batch")}</TableHead>
+                        <TableHead>{t("expiryDate")}</TableHead>
+                        <TableHead className="text-right">{t("expiryStatus")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expiryProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell className="font-medium">{product.name}</TableCell>
+                          <TableCell className="font-mono text-sm">{product.sku}</TableCell>
+                          <TableCell className="font-mono text-sm">{product.batchNumber || "-"}</TableCell>
+                          <TableCell>{new Date(product.expiryDate!).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">
+                            <Badge variant={getExpiryBadgeVariant(product.status)}>
+                              {getExpiryStatusText(product.status, product.daysUntilExpiry)}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {expiryProducts.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center text-muted-foreground">{t("noExpiringProducts")}</TableCell>
                         </TableRow>
                       )}
                     </TableBody>

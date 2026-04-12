@@ -234,6 +234,24 @@ export const translations = {
     currentStock: "Current Stock",
     threshold: "Threshold",
     allStockNormal: "All stock levels normal",
+    
+    // Expiry Tracking
+    trackExpiry: "Track Expiry Date",
+    trackExpiryDescription: "Enable expiry date tracking for this product",
+    expiryDate: "Expiry Date",
+    batchNumber: "Batch Number",
+    batchPlaceholder: "e.g., BATCH-2024-01",
+    expiry: "Expiry",
+    batch: "Batch",
+    expired: "Expired",
+    expiresToday: "Expires Today",
+    expires: "Expires in",
+    daysLeft: "days",
+    daysAgo: "days ago",
+    expiryAlert: "Expiry Alert",
+    productsExpiringSoon: "Products expiring within 30 days",
+    expiryStatus: "Expiry Status",
+    noExpiringProducts: "No products expiring soon",
   },
   dv: {
     // Header
@@ -470,5 +488,23 @@ export const translations = {
     currentStock: "މިހާރު ހުރި ސްޓޮކް",
     threshold: "ތަރެޝްހޯލްޑް",
     allStockNormal: "ހުރިހާ ސްޓޮކްއެއް ރަނގަޅު",
+    
+    // Expiry Tracking
+    trackExpiry: "ތާރީޚު ހަމަވާ މުއްދަތު ޓްރެކް",
+    trackExpiryDescription: "މި ތަކެއްޗަށް ތާރީޚު ހަމަވާ ޓްރެކިން ހަދާ",
+    expiryDate: "ތާރީޚު ހަމަވާ",
+    batchNumber: "ބެޗް ނަންބަރު",
+    batchPlaceholder: "މިސާލު: BATCH-2024-01",
+    expiry: "ހަމަވާނީ",
+    batch: "ބެޗް",
+    expired: "ހަމަވެއްޖެ",
+    expiresToday: "މިއަދު ހަމަވޭ",
+    expires: "ހަމަވާނީ",
+    daysLeft: "ދުވަސް",
+    daysAgo: "ދުވަސް ކުރިން",
+    expiryAlert: "ތާރީޚު ހަމަވުމުގެ އެލާޓް",
+    productsExpiringSoon: "30 ދުވަހުގެ ތެރޭގައި ތާރީޚު ހަމަވާ ތަކެތި",
+    expiryStatus: "ތާރީޚު ހަމަވުމުގެ ހާލަތު",
+    noExpiringProducts: "އަވަހަށް ތާރީޚު ހަމަވާ ތަކެތި ނެތް",
   },
 };
