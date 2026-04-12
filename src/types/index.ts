@@ -99,3 +99,16 @@ export interface CustomerLedger {
   creditBills: CreditBill[];
   creditLimit?: number;
 }
+
+export interface User {
+  id: string;
+  username: string;
+  password: string;
+  name: string;
+  role: "admin" | "cashier";
+  phone?: string;
+  email?: string;
+  isActive: boolean;
+  createdAt: string;
+  createdBy?: string;
+}
