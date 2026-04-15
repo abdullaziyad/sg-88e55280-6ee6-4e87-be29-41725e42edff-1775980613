@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart, Users, ScanLine, CheckCircle2, XCircle } from "lucide-react";
+import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart, Users, ScanLine, CheckCircle2, XCircle, Shield } from "lucide-react";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -228,15 +228,20 @@ function POSContent() {
                       </Button>
                     </Link>
                     <Link href="/users">
-                      <Button variant="outline" size="sm">
+                      <Button variant="ghost" size="sm" className="justify-start">
                         <Users className="w-4 h-4 mr-2" />
                         {t("userManagement")}
                       </Button>
                     </Link>
+                    <Link href="/audit">
+                      <Button variant="ghost" size="sm" className="justify-start">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Audit Trail
+                      </Button>
+                    </Link>
                     <Link href="/settings">
-                      <Button variant="outline" size="sm">
+                      <Button variant="ghost" size="sm" className="justify-start">
                         <Settings className="w-4 h-4 mr-2" />
-                        {t("settings")}
                       </Button>
                     </Link>
                   </>
