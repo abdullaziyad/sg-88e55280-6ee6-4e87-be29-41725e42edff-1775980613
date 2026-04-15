@@ -1,4 +1,3 @@
-<![CDATA[
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -134,4 +133,3 @@ export const auditService = {
     URL.revokeObjectURL(url);
   },
 };
-</![CDATA[>
