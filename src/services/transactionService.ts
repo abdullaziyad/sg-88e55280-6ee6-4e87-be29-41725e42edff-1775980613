@@ -39,11 +39,13 @@ export const transactionService = {
   },
 
   async createTransaction(
-    transaction: Omit<TransactionInsert, "id" | "created_at">,
+    transaction: Omit<TransactionInsert, "id" | "created_at" | "user_id" | "transaction_number">,
     items: Omit<TransactionItemInsert, "id" | "transaction_id" | "created_at">[]
   ) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
+
+    const transaction_number = `TRX-${Date.now().toString().slice(-6)}`;
 
     // Create transaction
     const { data: newTransaction, error: transactionError } = await supabase
@@ -51,6 +53,7 @@ export const transactionService = {
       .insert({
         ...transaction,
         user_id: user.id,
+        transaction_number,
       })
       .select()
       .single();

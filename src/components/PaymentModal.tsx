@@ -19,8 +19,8 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
 
-  const handlePayment = (method: "cash" | "card") => {
-    const completedTransaction = completeTransaction(method);
+  const handlePayment = async (method: "cash" | "card") => {
+    const completedTransaction = await completeTransaction(method);
     setTransaction(completedTransaction);
     setShowReceipt(true);
   };

@@ -14,7 +14,7 @@ interface CartContextType {
   getSubtotal: () => number;
   getTaxAmount: () => number;
   getTotal: () => number;
-  completeTransaction: (paymentMethod: "cash" | "card") => Promise<void>;
+  completeTransaction: (paymentMethod: "cash" | "card") => Promise<any>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -74,7 +74,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return getSubtotal() + getTaxAmount();
   };
 
-  const completeTransaction = async (paymentMethod: "cash" | "card"): Promise<void> => {
+  const completeTransaction = async (paymentMethod: "cash" | "card"): Promise<any> => {
     if (!currentStoreId) throw new Error("No store selected");
 
     const items = cart.map(item => ({
@@ -84,7 +84,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       total: item.product.price * item.quantity,
     }));
 
-    await transactionService.createTransaction(
+    const transaction = await transactionService.createTransaction(
       {
         store_id: currentStoreId,
         total: getTotal(),
@@ -96,6 +96,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
 
     setCart([]);
+    return transaction;
   };
 
   return (

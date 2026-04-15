@@ -81,7 +81,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (data?.settings) {
-        setSettings({ ...defaultSettings, ...data.settings } as AppSettings);
+        setSettings({ ...defaultSettings, ...(data.settings as unknown as AppSettings) });
       }
     } catch (error) {
       console.error("Failed to load settings:", error);
@@ -108,7 +108,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase
         .from("stores")
         .update({ 
-          settings,
+          settings: settings as any,
           updated_at: new Date().toISOString()
         })
         .eq("id", currentStoreId);

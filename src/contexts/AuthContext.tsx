@@ -10,6 +10,7 @@ export type UserRole = "owner" | "admin" | "cashier";
 interface StoreUser {
   id: string;
   email: string;
+  name: string;
   role: UserRole;
   storeName: string;
 }
@@ -81,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: authUser.id,
           email: authUser.email!,
+          name: authUser.email?.split('@')[0] || "User",
           role: stores.find(s => s.id === storeToSelect)?.store_users[0]?.role as UserRole,
           storeName: stores.find(s => s.id === storeToSelect)?.name || "",
         });
@@ -124,14 +126,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Create store for the new user
       const store = await storeService.createStore({
         name: storeName,
-        currency: "MVR",
-        tax_rate: 0,
+        settings: {
+          system: { currency: "MVR" }
+        } as any,
       });
 
       setCurrentStoreId(store.id);
       setUser({
         id: authData.user.id,
         email: authData.user.email!,
+        name: authData.user.email?.split('@')[0] || "User",
         role: "owner",
         storeName: store.name,
       });
