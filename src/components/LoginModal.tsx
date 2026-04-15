@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LogIn, AlertCircle } from "lucide-react";
+import { LogIn, AlertCircle, Store } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface LoginModalProps {
   open: boolean;
@@ -14,23 +15,81 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ open, onClose }: LoginModalProps) {
-  const { login } = useAuth();
+  const { login, signup } = useAuth();
   const { t } = useLanguage();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  
+  // Login state
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Signup state
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [isSigningUp, setIsSigningUp] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setLoginError("");
+    setIsLoggingIn(true);
 
-    const success = login(username, password);
-    if (success) {
-      setUsername("");
-      setPassword("");
-      onClose();
-    } else {
-      setError(t("loginError"));
+    try {
+      const success = await login(loginEmail, loginPassword);
+      if (success) {
+        setLoginEmail("");
+        setLoginPassword("");
+        onClose();
+      } else {
+        setLoginError("Invalid email or password");
+      }
+    } catch (error) {
+      setLoginError("An error occurred. Please try again.");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSignupError("");
+
+    // Validation
+    if (!signupEmail || !signupPassword || !signupConfirmPassword || !storeName) {
+      setSignupError("All fields are required");
+      return;
+    }
+
+    if (signupPassword !== signupConfirmPassword) {
+      setSignupError("Passwords do not match");
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+      setSignupError("Password must be at least 6 characters");
+      return;
+    }
+
+    setIsSigningUp(true);
+
+    try {
+      const success = await signup(signupEmail, signupPassword, storeName);
+      if (success) {
+        setSignupEmail("");
+        setSignupPassword("");
+        setSignupConfirmPassword("");
+        setStoreName("");
+        onClose();
+      } else {
+        setSignupError("Failed to create account. Please try again.");
+      }
+    } catch (error: any) {
+      setSignupError(error.message || "An error occurred. Please try again.");
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -40,52 +99,123 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         <DialogHeader>
           <DialogTitle className="font-heading flex items-center gap-2">
             <LogIn className="w-5 h-5" />
-            {t("login")}
+            Welcome to Maldives Shop POS
           </DialogTitle>
-          <DialogDescription>{t("loginDescription")}</DialogDescription>
+          <DialogDescription>Sign in to your store or create a new one</DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+        <Tabs defaultValue="login" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-2">
-            <Label htmlFor="username">{t("username")}</Label>
-            <Input
-              id="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t("usernamePlaceholder")}
-            />
-          </div>
+          <TabsContent value="login">
+            <form onSubmit={handleLogin} className="space-y-4">
+              {loginError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{loginError}</AlertDescription>
+                </Alert>
+              )}
 
-          <div className="space-y-2">
-            <Label htmlFor="password">{t("password")}</Label>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t("passwordPlaceholder")}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-email">Email</Label>
+                <Input
+                  id="login-email"
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="your@email.com"
+                />
+              </div>
 
-          <div className="bg-muted/50 p-3 rounded-lg text-xs space-y-1">
-            <p className="font-semibold">{t("demoCredentials")}</p>
-            <p>Admin: admin / admin123</p>
-            <p>Cashier: cashier / cashier123</p>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="login-password">Password</Label>
+                <Input
+                  id="login-password"
+                  type="password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+              </div>
 
-          <Button type="submit" className="w-full">
-            {t("login")}
-          </Button>
-        </form>
+              <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                {isLoggingIn ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignup} className="space-y-4">
+              {signupError && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{signupError}</AlertDescription>
+                </Alert>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="store-name">
+                  <Store className="w-4 h-4 inline mr-1" />
+                  Store Name
+                </Label>
+                <Input
+                  id="store-name"
+                  required
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  placeholder="My Shop"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">Email</Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  required
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  placeholder="your@email.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Password</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  required
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                <Input
+                  id="signup-confirm-password"
+                  type="password"
+                  required
+                  value={signupConfirmPassword}
+                  onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={isSigningUp}>
+                {isSigningUp ? "Creating account..." : "Create Store & Sign Up"}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
