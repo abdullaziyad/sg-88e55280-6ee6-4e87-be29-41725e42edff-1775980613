@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { LogIn, AlertCircle, Store } from "lucide-react";
+import { LogIn, AlertCircle, Store, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authService } from "@/services/authService";
 
 interface LoginModalProps {
   open: boolean;
@@ -31,6 +32,13 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
   const [storeName, setStoreName] = useState("");
   const [signupError, setSignupError] = useState("");
   const [isSigningUp, setIsSigningUp] = useState(false);
+
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +101,33 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError("");
+    setResetSuccess(false);
+
+    if (!resetEmail) {
+      setResetError("Please enter your email address");
+      return;
+    }
+
+    setIsSendingReset(true);
+
+    try {
+      const { error } = await authService.resetPassword(resetEmail);
+      if (error) {
+        setResetError(error.message);
+      } else {
+        setResetSuccess(true);
+        setResetEmail("");
+      }
+    } catch (error) {
+      setResetError("Failed to send reset email. Please try again.");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -111,42 +146,110 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
           </TabsList>
 
           <TabsContent value="login">
-            <form onSubmit={handleLogin} className="space-y-4">
-              {loginError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{loginError}</AlertDescription>
-                </Alert>
-              )}
+            {!showForgotPassword ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                {loginError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{loginError}</AlertDescription>
+                  </Alert>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  type="email"
-                  required
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="your@email.com"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="login-email">Email</Label>
+                  <Input
+                    id="login-email"
+                    type="email"
+                    required
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Password</Label>
+                  <Input
+                    id="login-password"
+                    type="password"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoggingIn}>
+                  {isLoggingIn ? "Signing in..." : "Sign In"}
+                </Button>
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm text-muted-foreground"
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot password?
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {resetSuccess ? (
+                  <Alert>
+                    <Mail className="h-4 w-4" />
+                    <AlertDescription>
+                      Password reset link sent! Check your email for instructions to reset your password.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <form onSubmit={handleForgotPassword} className="space-y-4">
+                    {resetError && (
+                      <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertDescription>{resetError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="reset-email">Email Address</Label>
+                      <Input
+                        id="reset-email"
+                        type="email"
+                        required
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="your@email.com"
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        Enter your email address and we'll send you a link to reset your password.
+                      </p>
+                    </div>
+
+                    <Button type="submit" className="w-full" disabled={isSendingReset}>
+                      {isSendingReset ? "Sending..." : "Send Reset Link"}
+                    </Button>
+                  </form>
+                )}
+
+                <div className="text-center">
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="text-sm"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setResetSuccess(false);
+                      setResetError("");
+                      setResetEmail("");
+                    }}
+                  >
+                    ← Back to Login
+                  </Button>
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <Input
-                  id="login-password"
-                  type="password"
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoggingIn}>
-                {isLoggingIn ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+            )}
           </TabsContent>
 
           <TabsContent value="signup">
