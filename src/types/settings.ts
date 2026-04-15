@@ -45,4 +45,67 @@ export interface AppSettings {
   receipt: ReceiptSettings;
   invoice: InvoiceSettings;
   system: SystemSettings;
+  backup: BackupSettings;
 }
+
+export interface BackupSettings {
+  enabled: boolean;
+  googleDrive: {
+    clientId: string;
+    apiKey: string;
+    appId: string;
+  };
+  schedule: {
+    daily: boolean;
+    time: string; // HH:MM format
+  };
+}
+
+export const defaultSettings: AppSettings = {
+  shop: {
+    businessName: "",
+    businessAddress: "",
+    businessPhone: "",
+    businessEmail: "",
+  },
+  tax: {
+    defaultGstRate: 0,
+    enableGst: false,
+    taxExemptCategories: [],
+    showTaxOnReceipt: false,
+  },
+  receipt: {
+    headerText: "",
+    footerText: "",
+    showLogo: false,
+    showBusinessDetails: false,
+    paperWidth: "58mm",
+  },
+  invoice: {
+    invoicePrefix: "",
+    quotationPrefix: "",
+    invoiceTerms: "",
+    quotationTerms: "",
+    defaultDueDays: 0,
+    defaultValidDays: 0,
+  },
+  system: {
+    currency: "USD",
+    currencySymbol: "$",
+    dateFormat: "DD/MM/YYYY",
+    timeFormat: "12h",
+    lowStockThreshold: 0,
+  },
+  backup: {
+    enabled: false,
+    googleDrive: {
+      clientId: "",
+      apiKey: "",
+      appId: "",
+    },
+    schedule: {
+      daily: false,
+      time: "00:00",
+    },
+  },
+};
