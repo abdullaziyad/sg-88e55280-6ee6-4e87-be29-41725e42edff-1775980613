@@ -26,25 +26,33 @@ interface LogAuditParams {
 export const auditService = {
   async logAction(params: LogAuditParams) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        console.warn("Audit log skipped: No active session");
+        return;
+      }
 
       const { error } = await supabase.from("audit_logs").insert({
         store_id: params.storeId,
-        user_id: user.id,
-        user_email: user.email || "unknown",
+        user_id: session.user.id,
+        user_email: session.user.email || "unknown",
         action: params.action,
         entity_type: params.entityType,
         entity_id: params.entityId,
         old_data: params.oldData,
         new_data: params.newData,
-        ip_address: null, // Can be populated from request headers in real deployment
+        ip_address: null,
         user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       });
 
-      if (error) console.error("Audit log error:", error);
+      if (error) {
+        console.error("Audit log error:", error);
+        // Don't throw - audit failures shouldn't break the app
+      }
     } catch (error) {
       console.error("Failed to log audit:", error);
+      // Silent failure - audit logging is non-critical
     }
   },
 

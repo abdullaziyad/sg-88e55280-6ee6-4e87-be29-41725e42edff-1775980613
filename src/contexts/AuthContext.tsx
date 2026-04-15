@@ -133,6 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (authError) throw authError;
       if (!authData.user) return false;
 
+      // Wait a moment for session to be fully established
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       // Create store for the new user
       const store = await storeService.createStore({
         name: storeName,
@@ -149,6 +152,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: "owner",
         storeName: store.name,
       });
+
+      // Log store creation (async, don't block on failure)
+      auditService.logAction({
+        storeId: store.id,
+        action: "create",
+        entityType: "store",
+        entityId: store.id,
+        newData: { name: storeName, owner: email },
+      }).catch(err => console.warn("Failed to log store creation:", err));
 
       return true;
     } catch (error) {
