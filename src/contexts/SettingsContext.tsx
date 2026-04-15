@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { AppSettings } from "@/types/settings";
 import { useAuth } from "./AuthContext";
+import { googleDriveBackup } from "@/lib/googleDrive";
 
 const defaultSettings: AppSettings = {
   shop: {
@@ -116,6 +117,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       setHasUnsavedChanges(false);
+
+      // Initialize Google Drive backup if enabled
+      if (settings.backup.enabled && settings.backup.schedule.daily) {
+        try {
+          await googleDriveBackup.initialize(settings.backup.googleDrive);
+          const [hours, minutes] = settings.backup.schedule.time.split(':').map(Number);
+          await googleDriveBackup.scheduleDailyBackup(
+            currentStoreId, 
+            settings.shop.businessName,
+            hours
+          );
+        } catch (backupError) {
+          console.error("Failed to schedule backup:", backupError);
+        }
+      }
+
       return Promise.resolve();
     } catch (error) {
       console.error("Failed to save settings:", error);
