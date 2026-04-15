@@ -11,14 +11,16 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Store, Receipt, FileText, Settings as SettingsIcon, RotateCcw, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Store, Receipt, FileText, Settings as SettingsIcon, RotateCcw, ShieldAlert, Save } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
 export default function Settings() {
-  const { settings, updateSettings, resetSettings } = useSettings();
+  const { settings, updateSettings, resetSettings, saveSettings, hasUnsavedChanges, isLoading } = useSettings();
   const { isAdmin } = useAuth();
   const { t } = useLanguage();
+  const { toast } = useToast();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("shop");
 
@@ -42,7 +44,26 @@ export default function Settings() {
   const handleReset = () => {
     if (confirm("Are you sure you want to reset all settings to default?")) {
       resetSettings();
-      alert("Settings reset successfully!");
+      toast({
+        title: "Settings Reset",
+        description: "Settings have been reset to default values. Click Save to apply.",
+      });
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveSettings();
+      toast({
+        title: "Settings Saved",
+        description: "Your settings have been saved successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -66,10 +87,20 @@ export default function Settings() {
                   <p className="text-sm text-muted-foreground">{t("customizeSettings")}</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                {t("resetToDefault")}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleReset} disabled={isLoading}>
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {t("resetToDefault")}
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={handleSave} 
+                  disabled={!hasUnsavedChanges || isLoading}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
             </div>
           </div>
         </header>

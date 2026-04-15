@@ -1,7 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import type { AppSettings } from "@/types/settings";
+import { useAuth } from "./AuthContext";
 
 const defaultSettings: AppSettings = {
   shop: {
@@ -44,52 +46,92 @@ const defaultSettings: AppSettings = {
 interface SettingsContextType {
   settings: AppSettings;
   updateSettings: (section: keyof AppSettings, data: Partial<AppSettings[keyof AppSettings]>) => void;
+  saveSettings: () => Promise<void>;
   resetSettings: () => void;
+  hasUnsavedChanges: boolean;
+  isLoading: boolean;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-const SETTINGS_KEY = "app_settings";
-
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { currentStoreId } = useAuth();
 
+  // Load settings from Supabase when store changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(SETTINGS_KEY);
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setSettings({ ...defaultSettings, ...parsed });
-        } catch (error) {
-          console.error("Failed to load settings", error);
-        }
-      }
+    if (currentStoreId) {
+      loadSettings();
     }
-  }, []);
+  }, [currentStoreId]);
+
+  const loadSettings = async () => {
+    if (!currentStoreId) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("stores")
+        .select("settings")
+        .eq("id", currentStoreId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.settings) {
+        setSettings({ ...defaultSettings, ...data.settings } as AppSettings);
+      }
+    } catch (error) {
+      console.error("Failed to load settings:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const updateSettings = (section: keyof AppSettings, data: Partial<AppSettings[keyof AppSettings]>) => {
-    setSettings((prev) => {
-      const updated = {
-        ...prev,
-        [section]: { ...prev[section], ...data },
-      };
-      if (typeof window !== "undefined") {
-        localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
-      }
-      return updated;
-    });
+    setSettings((prev) => ({
+      ...prev,
+      [section]: { ...prev[section], ...data },
+    }));
+    setHasUnsavedChanges(true);
+  };
+
+  const saveSettings = async () => {
+    if (!currentStoreId) {
+      throw new Error("No store selected");
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from("stores")
+        .update({ 
+          settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", currentStoreId);
+
+      if (error) throw error;
+
+      setHasUnsavedChanges(false);
+      return Promise.resolve();
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetSettings = () => {
     setSettings(defaultSettings);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem(SETTINGS_KEY);
-    }
+    setHasUnsavedChanges(true);
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, updateSettings, resetSettings }}>
+    <SettingsContext.Provider value={{ settings, updateSettings, saveSettings, resetSettings, hasUnsavedChanges, isLoading }}>
       {children}
     </SettingsContext.Provider>
   );
