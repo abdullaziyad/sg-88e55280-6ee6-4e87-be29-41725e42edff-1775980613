@@ -78,7 +78,7 @@ export const transactionService = {
           entityId: newTransaction.id,
           newData: {
             transaction: newTransaction,
-            items: newItems,
+            items: items,
             total: transaction.total,
           },
         });
