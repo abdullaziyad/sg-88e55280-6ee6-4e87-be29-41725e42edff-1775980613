@@ -135,4 +135,22 @@ export const transactionService = {
       transactions,
     };
   },
+
+  async getSalesReport(storeId: string, startDate: Date, endDate: Date) {
+    const startStr = startDate.toISOString().split('T')[0];
+    const endStr = endDate.toISOString().split('T')[0];
+    
+    const transactions = await this.getTransactionsByDateRange(storeId, startStr, endStr);
+    
+    const totalSales = transactions.reduce((sum, t) => sum + Number(t.total), 0);
+    const totalTransactions = transactions.length;
+    const averageTransaction = totalTransactions > 0 ? totalSales / totalTransactions : 0;
+
+    return {
+      totalSales,
+      totalTransactions,
+      averageTransaction,
+      transactions,
+    };
+  },
 };

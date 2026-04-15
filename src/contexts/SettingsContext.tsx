@@ -42,6 +42,18 @@ const defaultSettings: AppSettings = {
     timeFormat: "12h",
     lowStockThreshold: 10,
   },
+  backup: {
+    enabled: false,
+    googleDrive: {
+      clientId: "",
+      apiKey: "",
+      appId: "",
+    },
+    schedule: {
+      daily: false,
+      time: "00:00",
+    },
+  },
 };
 
 interface SettingsContextType {
