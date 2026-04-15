@@ -1,10 +1,9 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
-import { useCart } from "@/contexts/CartContext";
-import { useCredit } from "@/contexts/CreditContext";
-import { useDocuments } from "@/contexts/DocumentContext";
-import type { Transaction, Product } from "@/types";
+import { createContext, useContext, ReactNode, useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { transactionService } from "@/services/transactionService";
+import type { Product } from "@/types";
 
 interface SalesReport {
   totalSales: number;
@@ -22,131 +21,99 @@ interface ProductReport {
   revenue: number;
 }
 
-interface DayEndReport {
-  date: string;
-  sales: SalesReport;
-  topProducts: ProductReport[];
-  lowStockProducts: Product[];
-  creditSummary: {
-    newCreditBills: number;
-    paymentsReceived: number;
-    totalOutstanding: number;
-  };
-}
-
 interface ReportsContextType {
-  getDailySalesReport: (date?: string) => SalesReport;
-  getDateRangeSalesReport: (startDate: string, endDate: string) => SalesReport;
-  getTopSellingProducts: (limit?: number, startDate?: string, endDate?: string) => ProductReport[];
-  getLowStockProducts: (products: Product[], threshold?: number) => Product[];
-  getDayEndReport: (date?: string) => DayEndReport;
+  getDailySalesReport: (date?: string) => Promise<SalesReport>;
+  getDateRangeSalesReport: (startDate: string, endDate: string) => Promise<SalesReport>;
   exportToCSV: (data: any[], filename: string) => void;
 }
 
 const ReportsContext = createContext<ReportsContextType | undefined>(undefined);
 
 export function ReportsProvider({ children }: { children: ReactNode }) {
-  const { transactions } = useCart();
-  const { getAllLedgers } = useCredit();
+  const { currentStoreId } = useAuth();
 
-  const getDailySalesReport = (date?: string): SalesReport => {
-    const targetDate = date || new Date().toISOString().split("T")[0];
+  const getDailySalesReport = async (date?: string): Promise<SalesReport> => {
+    if (!currentStoreId) {
+      return {
+        totalSales: 0,
+        totalTransactions: 0,
+        totalTax: 0,
+        cashSales: 0,
+        cardSales: 0,
+        averageTransaction: 0,
+      };
+    }
+
+    const targetDate = date ? new Date(date) : new Date();
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
     
-    const dailyTransactions = transactions.filter((t) => {
-      const transactionDate = new Date(t.timestamp).toISOString().split("T")[0];
-      return transactionDate === targetDate;
-    });
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
 
-    return calculateSalesReport(dailyTransactions);
-  };
+    const report = await transactionService.getSalesReport(
+      currentStoreId,
+      startOfDay,
+      endOfDay
+    );
 
-  const getDateRangeSalesReport = (startDate: string, endDate: string): SalesReport => {
-    const rangeTransactions = transactions.filter((t) => {
-      const transactionDate = new Date(t.timestamp).toISOString().split("T")[0];
-      return transactionDate >= startDate && transactionDate <= endDate;
-    });
-
-    return calculateSalesReport(rangeTransactions);
-  };
-
-  const calculateSalesReport = (txns: Transaction[]): SalesReport => {
-    const totalSales = txns.reduce((sum, t) => sum + t.total, 0);
-    const totalTax = txns.reduce((sum, t) => sum + t.taxAmount, 0);
-    const cashSales = txns.filter((t) => t.paymentMethod === "cash").reduce((sum, t) => sum + t.total, 0);
-    const cardSales = txns.filter((t) => t.paymentMethod === "card").reduce((sum, t) => sum + t.total, 0);
+    const cashSales = report.transactions
+      .filter((t) => t.payment_method === "cash")
+      .reduce((sum, t) => sum + Number(t.total), 0);
+    
+    const cardSales = report.transactions
+      .filter((t) => t.payment_method === "card")
+      .reduce((sum, t) => sum + Number(t.total), 0);
+    
+    const totalTax = report.transactions.reduce((sum, t) => sum + Number(t.tax), 0);
 
     return {
-      totalSales,
-      totalTransactions: txns.length,
+      totalSales: report.totalSales,
+      totalTransactions: report.totalTransactions,
       totalTax,
       cashSales,
       cardSales,
-      averageTransaction: txns.length > 0 ? totalSales / txns.length : 0,
+      averageTransaction: report.averageTransaction,
     };
   };
 
-  const getTopSellingProducts = (
-    limit = 10,
-    startDate?: string,
-    endDate?: string
-  ): ProductReport[] => {
-    let relevantTransactions = transactions;
-
-    if (startDate && endDate) {
-      relevantTransactions = transactions.filter((t) => {
-        const transactionDate = new Date(t.timestamp).toISOString().split("T")[0];
-        return transactionDate >= startDate && transactionDate <= endDate;
-      });
+  const getDateRangeSalesReport = async (startDate: string, endDate: string): Promise<SalesReport> => {
+    if (!currentStoreId) {
+      return {
+        totalSales: 0,
+        totalTransactions: 0,
+        totalTax: 0,
+        cashSales: 0,
+        cardSales: 0,
+        averageTransaction: 0,
+      };
     }
 
-    const productMap = new Map<string, ProductReport>();
-
-    relevantTransactions.forEach((transaction) => {
-      transaction.items.forEach((item) => {
-        const existing = productMap.get(item.product.id);
-        if (existing) {
-          existing.quantitySold += item.quantity;
-          existing.revenue += item.product.price * item.quantity;
-        } else {
-          productMap.set(item.product.id, {
-            productId: item.product.id,
-            productName: item.product.name,
-            quantitySold: item.quantity,
-            revenue: item.product.price * item.quantity,
-          });
-        }
-      });
-    });
-
-    return Array.from(productMap.values())
-      .sort((a, b) => b.quantitySold - a.quantitySold)
-      .slice(0, limit);
-  };
-
-  const getLowStockProducts = (products: Product[], threshold = 10): Product[] => {
-    return products
-      .filter((p) => p.stock <= (p.lowStockThreshold || threshold))
-      .sort((a, b) => a.stock - b.stock);
-  };
-
-  const getDayEndReport = (date?: string): DayEndReport => {
-    const targetDate = date || new Date().toISOString().split("T")[0];
-    const sales = getDailySalesReport(targetDate);
-    const topProducts = getTopSellingProducts(5, targetDate, targetDate);
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
     
-    const ledgers = getAllLedgers();
-    const totalOutstanding = ledgers.reduce((sum, l) => sum + l.outstandingBalance, 0);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    const report = await transactionService.getSalesReport(currentStoreId, start, end);
+
+    const cashSales = report.transactions
+      .filter((t) => t.payment_method === "cash")
+      .reduce((sum, t) => sum + Number(t.total), 0);
+    
+    const cardSales = report.transactions
+      .filter((t) => t.payment_method === "card")
+      .reduce((sum, t) => sum + Number(t.total), 0);
+    
+    const totalTax = report.transactions.reduce((sum, t) => sum + Number(t.tax), 0);
 
     return {
-      date: targetDate,
-      sales,
-      topProducts,
-      lowStockProducts: [],
-      creditSummary: {
-        newCreditBills: 0,
-        paymentsReceived: 0,
-        totalOutstanding,
-      },
+      totalSales: report.totalSales,
+      totalTransactions: report.totalTransactions,
+      totalTax,
+      cashSales,
+      cardSales,
+      averageTransaction: report.averageTransaction,
     };
   };
 
@@ -183,9 +150,6 @@ export function ReportsProvider({ children }: { children: ReactNode }) {
       value={{
         getDailySalesReport,
         getDateRangeSalesReport,
-        getTopSellingProducts,
-        getLowStockProducts,
-        getDayEndReport,
         exportToCSV,
       }}
     >

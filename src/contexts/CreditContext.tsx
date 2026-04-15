@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { CreditBill, CreditPayment, CustomerLedger } from "@/types";
-import { sendMessage, onMessage } from "@/lib/multiWindow";
 
 interface CreditContextType {
   creditBills: CreditBill[];
@@ -20,7 +19,6 @@ const CREDIT_BILLS_KEY = "credit_bills";
 export function CreditProvider({ children }: { children: ReactNode }) {
   const [creditBills, setCreditBills] = useState<CreditBill[]>([]);
 
-  // Load credit bills from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem(CREDIT_BILLS_KEY);
@@ -28,18 +26,6 @@ export function CreditProvider({ children }: { children: ReactNode }) {
         setCreditBills(JSON.parse(stored));
       }
     }
-
-    // Listen for credit bill updates from other windows
-    const cleanup = onMessage((message) => {
-      if (message.type === "credit_update") {
-        const stored = localStorage.getItem(CREDIT_BILLS_KEY);
-        if (stored) {
-          setCreditBills(JSON.parse(stored));
-        }
-      }
-    });
-
-    return cleanup;
   }, []);
 
   const createCreditBill = (bill: Omit<CreditBill, "id" | "billNumber" | "amountPaid" | "amountDue" | "payments" | "status">) => {
@@ -57,10 +43,6 @@ export function CreditProvider({ children }: { children: ReactNode }) {
     const updated = [newBill, ...creditBills];
     setCreditBills(updated);
     localStorage.setItem(CREDIT_BILLS_KEY, JSON.stringify(updated));
-    
-    sendMessage({
-      type: "credit_update" as const,
-    });
   };
 
   const recordPayment = (billId: string, payment: Omit<CreditPayment, "id">) => {
@@ -97,10 +79,6 @@ export function CreditProvider({ children }: { children: ReactNode }) {
 
     setCreditBills(updated);
     localStorage.setItem(CREDIT_BILLS_KEY, JSON.stringify(updated));
-    
-    sendMessage({
-      type: "credit_update" as const,
-    });
   };
 
   const getCustomerLedger = (customerPhone: string): CustomerLedger | null => {

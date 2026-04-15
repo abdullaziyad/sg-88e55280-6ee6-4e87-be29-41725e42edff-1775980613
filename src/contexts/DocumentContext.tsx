@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import type { Invoice, Quotation, CartItem } from "@/types";
-import { onMessage, initBroadcastChannel, sendMessage } from "@/lib/multiWindow";
 
 interface DocumentContextType {
   invoices: Invoice[];
@@ -25,7 +24,6 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
 
-  // Load from localStorage on mount
   useEffect(() => {
     const savedInvoices = localStorage.getItem(INVOICES_KEY);
     const savedQuotations = localStorage.getItem(QUOTATIONS_KEY);
@@ -36,35 +34,14 @@ export function DocumentProvider({ children }: { children: ReactNode }) {
     if (savedQuotations) {
       setQuotations(JSON.parse(savedQuotations));
     }
-
-    // Listen for updates from other windows
-    const cleanup = onMessage((message) => {
-      if (message.type === "invoice_update") {
-        const updated = localStorage.getItem(INVOICES_KEY);
-        if (updated) setInvoices(JSON.parse(updated));
-      }
-      if (message.type === "quotation_update") {
-        const updated = localStorage.getItem(QUOTATIONS_KEY);
-        if (updated) setQuotations(JSON.parse(updated));
-      }
-    });
-
-    initBroadcastChannel();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
   }, []);
 
-  // Save to localStorage when changed
   useEffect(() => {
     localStorage.setItem(INVOICES_KEY, JSON.stringify(invoices));
-    sendMessage({ type: "invoice_update" });
   }, [invoices]);
 
   useEffect(() => {
     localStorage.setItem(QUOTATIONS_KEY, JSON.stringify(quotations));
-    sendMessage({ type: "quotation_update" });
   }, [quotations]);
 
   const generateInvoiceNumber = () => {

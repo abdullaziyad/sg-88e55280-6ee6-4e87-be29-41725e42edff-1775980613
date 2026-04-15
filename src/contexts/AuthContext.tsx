@@ -1,173 +1,182 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import type { User } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
+import { storeService } from "@/services/storeService";
 
-export type UserRole = "admin" | "cashier";
+export type UserRole = "owner" | "admin" | "cashier";
+
+interface StoreUser {
+  id: string;
+  email: string;
+  role: UserRole;
+  storeName: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  user: StoreUser | null;
+  currentStoreId: string | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  isOwner: () => boolean;
   isAdmin: () => boolean;
   isCashier: () => boolean;
-  createUser: (userData: Omit<User, "id" | "createdAt" | "createdBy">) => User;
-  updateUser: (userId: string, updates: Partial<User>) => boolean;
-  deleteUser: (userId: string) => boolean;
-  getAllUsers: () => User[];
-  changePassword: (userId: string, newPassword: string) => boolean;
+  signup: (email: string, password: string, storeName: string) => Promise<boolean>;
+  selectStore: (storeId: string) => void;
+  availableStores: Array<{ id: string; name: string; role: UserRole }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const USERS_KEY = "pos_users";
-const DEFAULT_ADMIN: User = {
-  id: "1",
-  username: "admin",
-  password: "admin123",
-  name: "Admin User",
-  role: "admin",
-  isActive: true,
-  createdAt: new Date().toISOString(),
-};
-
-const DEFAULT_CASHIER: User = {
-  id: "2",
-  username: "cashier",
-  password: "cashier123",
-  name: "Cashier",
-  role: "cashier",
-  isActive: true,
-  createdAt: new Date().toISOString(),
-};
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
+  const [user, setUser] = useState<StoreUser | null>(null);
+  const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
+  const [availableStores, setAvailableStores] = useState<Array<{ id: string; name: string; role: UserRole }>>([]);
 
-  // Load users and current user from localStorage on mount
   useEffect(() => {
-    const storedUsers = localStorage.getItem(USERS_KEY);
-    if (storedUsers) {
-      setUsers(JSON.parse(storedUsers));
-    } else {
-      // Initialize with default users
-      const defaultUsers = [DEFAULT_ADMIN, DEFAULT_CASHIER];
-      localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
-      setUsers(defaultUsers);
-    }
+    // Check current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserStores(session.user);
+      }
+    });
 
-    const storedUser = localStorage.getItem("pos_user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        loadUserStores(session.user);
+      } else {
+        setUser(null);
+        setCurrentStoreId(null);
+        setAvailableStores([]);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (username: string, password: string): boolean => {
-    const currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    const foundUser = currentUsers.find(
-      (u: User) => u.username === username && u.password === password && u.isActive
-    );
+  const loadUserStores = async (authUser: User) => {
+    try {
+      const stores = await storeService.getUserStores();
+      
+      if (stores.length > 0) {
+        setAvailableStores(
+          stores.map((s) => ({
+            id: s.id,
+            name: s.name,
+            role: s.store_users[0]?.role as UserRole,
+          }))
+        );
 
-    if (foundUser) {
-      const userData: User = {
-        id: foundUser.id,
-        username: foundUser.username,
-        password: foundUser.password,
-        name: foundUser.name,
-        role: foundUser.role,
-        phone: foundUser.phone,
-        email: foundUser.email,
-        isActive: foundUser.isActive,
-        createdAt: foundUser.createdAt,
-        createdBy: foundUser.createdBy,
-      };
-      setUser(userData);
-      localStorage.setItem("pos_user", JSON.stringify(userData));
+        // Auto-select first store or previously selected
+        const savedStoreId = localStorage.getItem("selected_store_id");
+        const storeToSelect = savedStoreId && stores.find(s => s.id === savedStoreId) 
+          ? savedStoreId 
+          : stores[0].id;
+
+        setCurrentStoreId(storeToSelect);
+        setUser({
+          id: authUser.id,
+          email: authUser.email!,
+          role: stores.find(s => s.id === storeToSelect)?.store_users[0]?.role as UserRole,
+          storeName: stores.find(s => s.id === storeToSelect)?.name || "",
+        });
+      }
+    } catch (error) {
+      console.error("Error loading stores:", error);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      
+      if (data.user) {
+        await loadUserStores(data.user);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Login error:", error);
+      return false;
+    }
+  };
+
+  const signup = async (email: string, password: string, storeName: string): Promise<boolean> => {
+    try {
+      // Create user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) return false;
+
+      // Create store for the new user
+      const store = await storeService.createStore({
+        name: storeName,
+        currency: "MVR",
+        tax_rate: 0,
+      });
+
+      setCurrentStoreId(store.id);
+      setUser({
+        id: authData.user.id,
+        email: authData.user.email!,
+        role: "owner",
+        storeName: store.name,
+      });
+
       return true;
+    } catch (error) {
+      console.error("Signup error:", error);
+      return false;
     }
-    return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem("pos_user");
+    setCurrentStoreId(null);
+    setAvailableStores([]);
+    localStorage.removeItem("selected_store_id");
   };
 
-  const isAdmin = () => user?.role === "admin";
-  const isCashier = () => user?.role === "cashier";
-
-  const createUser = (userData: Omit<User, "id" | "createdAt" | "createdBy">): User => {
-    const currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    
-    const newUser: User = {
-      ...userData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      createdBy: user?.id,
-    };
-
-    const updatedUsers = [...currentUsers, newUser];
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    setUsers(updatedUsers);
-
-    return newUser;
-  };
-
-  const updateUser = (userId: string, updates: Partial<User>): boolean => {
-    const currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    const userIndex = currentUsers.findIndex((u: User) => u.id === userId);
-
-    if (userIndex === -1) return false;
-
-    currentUsers[userIndex] = { ...currentUsers[userIndex], ...updates };
-    localStorage.setItem(USERS_KEY, JSON.stringify(currentUsers));
-    setUsers(currentUsers);
-
-    // Update current user if it's the same user
-    if (user?.id === userId) {
-      const updatedUser = currentUsers[userIndex];
-      setUser(updatedUser);
-      localStorage.setItem("pos_user", JSON.stringify(updatedUser));
+  const selectStore = (storeId: string) => {
+    const store = availableStores.find(s => s.id === storeId);
+    if (store) {
+      setCurrentStoreId(storeId);
+      setUser(prev => prev ? { ...prev, role: store.role, storeName: store.name } : null);
+      localStorage.setItem("selected_store_id", storeId);
     }
-
-    return true;
   };
 
-  const deleteUser = (userId: string): boolean => {
-    // Prevent deleting yourself
-    if (user?.id === userId) return false;
-
-    const currentUsers = JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-    const updatedUsers = currentUsers.filter((u: User) => u.id !== userId);
-    
-    localStorage.setItem(USERS_KEY, JSON.stringify(updatedUsers));
-    setUsers(updatedUsers);
-
-    return true;
-  };
-
-  const getAllUsers = (): User[] => {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  };
-
-  const changePassword = (userId: string, newPassword: string): boolean => {
-    return updateUser(userId, { password: newPassword });
-  };
+  const isOwner = () => user?.role === "owner";
+  const isAdmin = () => user?.role === "admin" || user?.role === "owner";
+  const isCashier = () => user?.role === "cashier";
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        currentStoreId,
         login,
         logout,
+        isOwner,
         isAdmin,
         isCashier,
-        createUser,
-        updateUser,
-        deleteUser,
-        getAllUsers,
-        changePassword,
+        signup,
+        selectStore,
+        availableStores,
       }}
     >
       {children}

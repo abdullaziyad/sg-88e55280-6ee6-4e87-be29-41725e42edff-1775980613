@@ -1,13 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import type { Product, CartItem, Transaction } from "@/types";
-import {
-  getSharedTransactions,
-  addSharedTransaction,
-  onMessage,
-  initBroadcastChannel,
-} from "@/lib/multiWindow";
+import type { Product, CartItem } from "@/types";
+import { transactionService } from "@/services/transactionService";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface CartContextType {
   cart: CartItem[];
@@ -18,34 +14,14 @@ interface CartContextType {
   getSubtotal: () => number;
   getTaxAmount: () => number;
   getTotal: () => number;
-  completeTransaction: (paymentMethod: "cash" | "card") => Transaction;
-  transactions: Transaction[];
+  completeTransaction: (paymentMethod: "cash" | "card") => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  // Load shared transactions on mount
-  useEffect(() => {
-    setTransactions(getSharedTransactions());
-    
-    // Listen for new transactions from other windows
-    const cleanup = onMessage((message) => {
-      if (message.type === "new_transaction") {
-        setTransactions(getSharedTransactions());
-      }
-    });
-
-    // Initialize BroadcastChannel
-    initBroadcastChannel();
-
-    return () => {
-      if (cleanup) cleanup();
-    };
-  }, []);
+  const { currentStoreId } = useAuth();
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -98,23 +74,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return getSubtotal() + getTaxAmount();
   };
 
-  const completeTransaction = (paymentMethod: "cash" | "card"): Transaction => {
-    const transaction: Transaction = {
-      id: Date.now().toString(),
-      items: [...cart],
-      subtotal: getSubtotal(),
-      taxAmount: getTaxAmount(),
-      total: getTotal(),
-      paymentMethod,
-      timestamp: new Date().toISOString(),
-    };
-    
-    // Save to shared localStorage and notify other windows
-    addSharedTransaction(transaction);
-    setTransactions(getSharedTransactions());
+  const completeTransaction = async (paymentMethod: "cash" | "card"): Promise<void> => {
+    if (!currentStoreId) throw new Error("No store selected");
+
+    const items = cart.map(item => ({
+      product_id: item.product.id,
+      quantity: item.quantity,
+      unit_price: item.product.price,
+      total: item.product.price * item.quantity,
+    }));
+
+    await transactionService.createTransaction(
+      {
+        store_id: currentStoreId,
+        total: getTotal(),
+        subtotal: getSubtotal(),
+        tax: getTaxAmount(),
+        payment_method: paymentMethod,
+      },
+      items
+    );
+
     setCart([]);
-    
-    return transaction;
   };
 
   return (
@@ -129,7 +110,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         getTaxAmount,
         getTotal,
         completeTransaction,
-        transactions,
       }}
     >
       {children}
