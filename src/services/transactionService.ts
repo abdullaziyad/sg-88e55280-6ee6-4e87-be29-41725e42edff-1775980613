@@ -1,43 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { offlineDB } from "@/lib/db";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
-type TransactionItem = Database["public"]["Tables"]["transaction_items"]["Row"];
 type TransactionItemInsert = Database["public"]["Tables"]["transaction_items"]["Insert"];
 
 export const transactionService = {
-  async getTransactions(storeId: string, startDate?: Date, endDate?: Date) {
-    let query = supabase
-      .from("transactions")
-      .select("*, transaction_items(*)")
-      .eq("store_id", storeId)
-      .order("created_at", { ascending: false });
-
-    if (startDate) {
-      query = query.gte("created_at", startDate.toISOString());
-    }
-    if (endDate) {
-      query = query.lte("created_at", endDate.toISOString());
-    }
-
-    const { data, error } = await query;
-
-    if (error) throw error;
-    return data || [];
-  },
-
-  async getTransaction(transactionId: string) {
-    const { data, error } = await supabase
-      .from("transactions")
-      .select("*, transaction_items(*)")
-      .eq("id", transactionId)
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
   async createTransaction(
     transaction: Omit<TransactionInsert, "id" | "created_at" | "user_id" | "transaction_number">,
     items: Omit<TransactionItemInsert, "id" | "transaction_id" | "created_at">[]
@@ -46,72 +15,120 @@ export const transactionService = {
     if (!user) throw new Error("Not authenticated");
 
     const transaction_number = `TRX-${Date.now().toString().slice(-6)}`;
+    const transactionId = crypto.randomUUID();
+    
+    const newTransaction = {
+      id: transactionId,
+      ...transaction,
+      user_id: user.id,
+      transaction_number,
+      created_at: new Date().toISOString(),
+    };
 
-    // Create transaction
-    const { data: newTransaction, error: transactionError } = await supabase
-      .from("transactions")
-      .insert({
-        ...transaction,
-        user_id: user.id,
-        transaction_number,
-      })
-      .select()
-      .single();
-
-    if (transactionError) throw transactionError;
-
-    // Create transaction items
-    const itemsWithTransactionId = items.map(item => ({
+    const transactionItems = items.map(item => ({
       ...item,
-      transaction_id: newTransaction.id,
+      id: crypto.randomUUID(),
+      transaction_id: transactionId,
+      created_at: new Date().toISOString(),
     }));
 
-    const { error: itemsError } = await supabase
-      .from("transaction_items")
-      .insert(itemsWithTransactionId);
+    // Save offline immediately
+    await offlineDB.addTransaction({
+      ...newTransaction,
+      transaction_items: transactionItems,
+    });
 
-    if (itemsError) throw itemsError;
-
-    // Update product stock
-    for (const item of items) {
-      if (item.product_id) {
-        const { data: product } = await supabase
-          .from("products")
-          .select("stock")
-          .eq("id", item.product_id)
+    // Try to sync online if available
+    if (navigator.onLine) {
+      try {
+        const { data: txData, error: transactionError } = await supabase
+          .from("transactions")
+          .insert({
+            ...transaction,
+            user_id: user.id,
+            transaction_number,
+          })
+          .select()
           .single();
 
-        if (product) {
-          await supabase
-            .from("products")
-            .update({ 
-              stock: product.stock - item.quantity,
-              updated_at: new Date().toISOString()
-            })
-            .eq("id", item.product_id);
-        }
+        if (transactionError) throw transactionError;
+
+        const { error: itemsError } = await supabase
+          .from("transaction_items")
+          .insert(items.map(item => ({ ...item, transaction_id: txData.id })));
+
+        if (itemsError) throw itemsError;
+
+        return { ...txData, transaction_items: transactionItems };
+      } catch (error) {
+        console.error("Online transaction failed, queued for sync:", error);
       }
     }
 
-    return newTransaction;
+    return { ...newTransaction, transaction_items: transactionItems };
   },
 
-  async getSalesReport(storeId: string, startDate: Date, endDate: Date) {
-    const { data, error } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("store_id", storeId)
-      .gte("created_at", startDate.toISOString())
-      .lte("created_at", endDate.toISOString());
+  async getTransactions(storeId: string, useOffline = false) {
+    // Try offline first if requested or if offline
+    if (useOffline || !navigator.onLine) {
+      try {
+        const transactions = await offlineDB.getTransactions(storeId);
+        return transactions;
+      } catch (error) {
+        console.error("Offline fetch failed:", error);
+      }
+    }
 
-    if (error) throw error;
+    // Try online
+    try {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*, transaction_items(*)")
+        .eq("store_id", storeId)
+        .order("created_at", { ascending: false });
 
-    const transactions = data || [];
+      if (error) throw error;
+
+      // Cache to offline DB
+      if (data && navigator.onLine) {
+        const db = await offlineDB.ensureDB();
+        const tx = db.transaction('transactions', 'readwrite');
+        await Promise.all(data.map(t => tx.store.put(t)));
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error("Online fetch failed, using offline:", error);
+      return offlineDB.getTransactions(storeId);
+    }
+  },
+
+  async getRecentTransactions(storeId: string, limit = 10) {
+    const transactions = await this.getTransactions(storeId);
+    return transactions.slice(0, limit);
+  },
+
+  async getTransactionsByDateRange(
+    storeId: string,
+    startDate: string,
+    endDate: string
+  ) {
+    const transactions = await this.getTransactions(storeId);
+    return transactions.filter(t => {
+      const date = t.created_at.split('T')[0];
+      return date >= startDate && date <= endDate;
+    });
+  },
+
+  async getDailySalesReport(storeId: string, date: string) {
+    const transactions = await this.getTransactionsByDateRange(storeId, date, date);
+    
     const totalSales = transactions.reduce((sum, t) => sum + Number(t.total), 0);
     const totalTransactions = transactions.length;
     const averageTransaction = totalTransactions > 0 ? totalSales / totalTransactions : 0;
 
     return {
+      date,
       totalSales,
       totalTransactions,
       averageTransaction,
