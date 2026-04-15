@@ -1,11 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { useReports } from "@/contexts/ReportsContext";
-import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSettings } from "@/contexts/SettingsContext";
-import { mockProducts } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,16 +27,127 @@ import {
   FileText,
 } from "lucide-react";
 import { format } from "date-fns";
+import { productService } from "@/services/productService";
+import { transactionService } from "@/services/transactionService";
 
 export default function ReportsPage() {
-  const { user, isAdmin } = useAuth();
-  const { getDailySalesReport, getDateRangeSalesReport, getTopSellingProducts, getLowStockProducts, getDayEndReport, exportToCSV } = useReports();
-  const { transactions } = useCart();
+  const { user, isAdmin, currentStoreId } = useAuth();
+  const { getDailySalesReport, getDateRangeSalesReport, exportToCSV } = useReports();
   const { t } = useLanguage();
   const { settings } = useSettings();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
+
+  const [dailyReport, setDailyReport] = useState<any>({
+    totalSales: 0,
+    totalTransactions: 0,
+    totalTax: 0,
+    cashSales: 0,
+    cardSales: 0,
+    averageTransaction: 0,
+  });
+  const [rangeReport, setRangeReport] = useState<any>({
+    totalSales: 0,
+    totalTransactions: 0,
+    totalTax: 0,
+    cashSales: 0,
+    cardSales: 0,
+    averageTransaction: 0,
+  });
+  const [topProducts, setTopProducts] = useState<any[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<any[]>([]);
+  const [expiryProducts, setExpiryProducts] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!currentStoreId || !isAdmin()) return;
+
+    const loadData = async () => {
+      try {
+        const dReport = await getDailySalesReport(selectedDate.toISOString().split("T")[0]);
+        setDailyReport(dReport);
+
+        const rReport = await getDateRangeSalesReport(
+          startDate.toISOString().split("T")[0],
+          endDate.toISOString().split("T")[0]
+        );
+        setRangeReport(rReport);
+
+        // Fetch low stock
+        const lowStock = await productService.getLowStockProducts(currentStoreId, settings.system.lowStockThreshold);
+        setLowStockProducts(lowStock);
+
+        // Fetch products for expiry
+        const products = await productService.getProducts(currentStoreId);
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const expiry = products
+          .filter((p: any) => p.hasExpiry && p.expiryDate)
+          .map((p: any) => {
+            const expiryDate = new Date(p.expiryDate);
+            expiryDate.setHours(0, 0, 0, 0);
+            const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let status = "normal";
+            if (daysUntilExpiry < 0) status = "expired";
+            else if (daysUntilExpiry === 0) status = "today";
+            else if (daysUntilExpiry <= 7) status = "critical";
+            else if (daysUntilExpiry <= 30) status = "warning";
+
+            return {
+              ...p,
+              daysUntilExpiry,
+              status,
+            };
+          })
+          .filter((p: any) => p.daysUntilExpiry <= 30)
+          .sort((a: any, b: any) => a.daysUntilExpiry - b.daysUntilExpiry);
+        
+        setExpiryProducts(expiry);
+
+        const allTrans = await transactionService.getTransactions(currentStoreId);
+        setTransactions(allTrans);
+
+        // Top products calculation from allTrans based on date range
+        const productSales: Record<string, { name: string, qty: number, revenue: number }> = {};
+        allTrans.forEach(t => {
+          const tDate = new Date(t.created_at).toISOString().split("T")[0];
+          if (tDate >= startDate.toISOString().split("T")[0] && tDate <= endDate.toISOString().split("T")[0]) {
+            t.transaction_items?.forEach((item: any) => {
+              if (item.product_id) {
+                if (!productSales[item.product_id]) {
+                  const p = products.find(prod => prod.id === item.product_id);
+                  productSales[item.product_id] = {
+                    name: p?.name || "Unknown",
+                    qty: 0,
+                    revenue: 0
+                  };
+                }
+                productSales[item.product_id].qty += item.quantity;
+                productSales[item.product_id].revenue += Number(item.total);
+              }
+            });
+          }
+        });
+
+        const top = Object.entries(productSales)
+          .map(([id, data]) => ({ productId: id, productName: data.name, quantitySold: data.qty, revenue: data.revenue }))
+          .sort((a, b) => b.quantitySold - a.quantitySold)
+          .slice(0, 10);
+        
+        setTopProducts(top);
+
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    loadData();
+  }, [currentStoreId, isAdmin, selectedDate, startDate, endDate, getDailySalesReport, getDateRangeSalesReport, settings.system.lowStockThreshold]);
+
 
   if (!user || !isAdmin()) {
     return (
@@ -57,38 +166,6 @@ export default function ReportsPage() {
     );
   }
 
-  const dailyReport = getDailySalesReport(selectedDate.toISOString().split("T")[0]);
-  const dayEndReport = getDayEndReport(selectedDate.toISOString().split("T")[0]);
-  const rangeReport = getDateRangeSalesReport(
-    startDate.toISOString().split("T")[0],
-    endDate.toISOString().split("T")[0]
-  );
-  const topProducts = getTopSellingProducts(10, startDate.toISOString().split("T")[0], endDate.toISOString().split("T")[0]);
-  const lowStockProducts = getLowStockProducts(mockProducts);
-
-  const getExpiryProducts = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    return mockProducts
-      .filter((p) => p.hasExpiry && p.expiryDate)
-      .map((p) => {
-        const expiryDate = new Date(p.expiryDate!);
-        expiryDate.setHours(0, 0, 0, 0);
-        const daysUntilExpiry = Math.ceil((expiryDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        
-        return {
-          ...p,
-          daysUntilExpiry,
-          status: daysUntilExpiry < 0 ? "expired" : daysUntilExpiry === 0 ? "today" : daysUntilExpiry <= 7 ? "critical" : daysUntilExpiry <= 30 ? "warning" : "normal",
-        };
-      })
-      .filter((p) => p.daysUntilExpiry <= 30)
-      .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
-  };
-
-  const expiryProducts = getExpiryProducts();
-
   const handlePrintDayEnd = () => {
     window.print();
   };
@@ -96,18 +173,18 @@ export default function ReportsPage() {
   const handleExportSales = () => {
     const data = transactions
       .filter((t) => {
-        const tDate = new Date(t.timestamp).toISOString().split("T")[0];
+        const tDate = new Date(t.created_at).toISOString().split("T")[0];
         return tDate >= startDate.toISOString().split("T")[0] && tDate <= endDate.toISOString().split("T")[0];
       })
       .map((t) => ({
-        Date: new Date(t.timestamp).toLocaleDateString(),
-        Time: new Date(t.timestamp).toLocaleTimeString(),
-        Receipt: t.id.slice(-6),
-        Items: t.items.length,
-        Subtotal: t.subtotal.toFixed(2),
-        Tax: t.taxAmount.toFixed(2),
-        Total: t.total.toFixed(2),
-        Payment: t.paymentMethod,
+        Date: new Date(t.created_at).toLocaleDateString(),
+        Time: new Date(t.created_at).toLocaleTimeString(),
+        Receipt: t.transaction_number || t.id.slice(-6),
+        Items: t.transaction_items?.length || 0,
+        Subtotal: Number(t.subtotal).toFixed(2),
+        Tax: Number(t.tax).toFixed(2),
+        Total: Number(t.total).toFixed(2),
+        Payment: t.payment_method,
       }));
 
     const filename = `sales_report_${startDate.toISOString().split("T")[0]}_to_${endDate.toISOString().split("T")[0]}`;
@@ -277,29 +354,6 @@ export default function ReportsPage() {
                       </div>
                     </CardContent>
                   </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="font-heading">{t("topSellingToday")}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {dayEndReport.topProducts.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">{t("noSalesToday")}</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {dayEndReport.topProducts.map((product, index) => (
-                            <div key={product.productId} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-muted-foreground">#{index + 1}</span>
-                                <span className="text-sm font-medium">{product.productName}</span>
-                              </div>
-                              <span className="text-sm font-semibold">{product.quantitySold} {t("sold")}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
                 </div>
               </div>
             </TabsContent>
@@ -443,7 +497,6 @@ export default function ReportsPage() {
                         <TableHead>{t("product")}</TableHead>
                         <TableHead>{t("sku")}</TableHead>
                         <TableHead className="text-right">{t("currentStock")}</TableHead>
-                        <TableHead className="text-right">{t("threshold")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -454,12 +507,11 @@ export default function ReportsPage() {
                           <TableCell className="text-right">
                             <span className={product.stock === 0 ? "text-destructive font-semibold" : ""}>{product.stock}</span>
                           </TableCell>
-                          <TableCell className="text-right text-muted-foreground">{product.lowStockThreshold}</TableCell>
                         </TableRow>
                       ))}
                       {lowStockProducts.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground">{t("allStockNormal")}</TableCell>
+                          <TableCell colSpan={3} className="text-center text-muted-foreground">{t("allStockNormal")}</TableCell>
                         </TableRow>
                       )}
                     </TableBody>

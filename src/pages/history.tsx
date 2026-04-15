@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
-import { useCart } from "@/contexts/CartContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/router";
@@ -12,15 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowLeft, Search, Calendar, CreditCard, Banknote, ShieldAlert, Receipt as ReceiptIcon } from "lucide-react";
 import Link from "next/link";
+import { transactionService } from "@/services/transactionService";
 
 export default function History() {
-  const { transactions } = useCart();
   const { t } = useLanguage();
-  const { isAdmin } = useAuth();
+  const { isAdmin, currentStoreId } = useAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<string>("all");
   const [selectedTransaction, setSelectedTransaction] = useState<string | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (currentStoreId && isAdmin()) {
+      transactionService.getTransactions(currentStoreId).then(setTransactions).catch(console.error);
+    }
+  }, [currentStoreId, isAdmin]);
 
   // Redirect if not admin
   if (!isAdmin()) {
@@ -40,14 +46,14 @@ export default function History() {
 
   // Filter transactions
   const filteredTransactions = transactions.filter((tx) => {
-    const matchesSearch = tx.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPayment = paymentFilter === "all" || tx.paymentMethod === paymentFilter;
+    const matchesSearch = tx.transaction_number?.toLowerCase().includes(searchQuery.toLowerCase()) || tx.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPayment = paymentFilter === "all" || tx.payment_method === paymentFilter;
     return matchesSearch && matchesPayment;
   });
 
   // Calculate totals
-  const totalSales = transactions.reduce((sum, tx) => sum + tx.total, 0);
-  const totalTax = transactions.reduce((sum, tx) => sum + tx.taxAmount, 0);
+  const totalSales = transactions.reduce((sum, tx) => sum + Number(tx.total), 0);
+  const totalTax = transactions.reduce((sum, tx) => sum + Number(tx.tax), 0);
 
   return (
     <>
@@ -163,7 +169,7 @@ export default function History() {
                 <ScrollArea className="h-[600px]">
                   <div className="space-y-3">
                     {filteredTransactions.map((transaction) => {
-                      const date = new Date(transaction.timestamp);
+                      const date = new Date(transaction.created_at);
                       const isExpanded = selectedTransaction === transaction.id;
 
                       return (
@@ -182,7 +188,7 @@ export default function History() {
                                 </div>
                                 <div>
                                   <p className="font-medium">
-                                    {t("receiptNumber")}: {transaction.id.slice(-6)}
+                                    {t("receiptNumber")}: {transaction.transaction_number || transaction.id.slice(-6)}
                                   </p>
                                   <div className="flex items-center gap-2 mt-1">
                                     <Calendar className="w-3 h-3 text-muted-foreground" />
@@ -195,22 +201,22 @@ export default function History() {
 
                               <div className="text-right">
                                 <p className="font-heading font-bold text-lg text-primary">
-                                  {t("mvr")} {transaction.total.toFixed(2)}
+                                  {t("mvr")} {Number(transaction.total).toFixed(2)}
                                 </p>
                                 <Badge
                                   variant={
-                                    transaction.paymentMethod === "cash"
+                                    transaction.payment_method === "cash"
                                       ? "secondary"
                                       : "outline"
                                   }
                                   className="mt-1"
                                 >
-                                  {transaction.paymentMethod === "cash" ? (
+                                  {transaction.payment_method === "cash" ? (
                                     <Banknote className="w-3 h-3 mr-1" />
                                   ) : (
                                     <CreditCard className="w-3 h-3 mr-1" />
                                   )}
-                                  {transaction.paymentMethod === "cash"
+                                  {transaction.payment_method === "cash"
                                     ? t("cash")
                                     : t("card")}
                                 </Badge>
@@ -223,25 +229,20 @@ export default function History() {
                                   <p className="text-sm font-medium text-muted-foreground">
                                     {t("items")}:
                                   </p>
-                                  {transaction.items.map((item) => (
+                                  {transaction.transaction_items?.map((item: any) => (
                                     <div
-                                      key={item.product.id}
+                                      key={item.id}
                                       className="flex items-center justify-between text-sm bg-muted/50 p-2 rounded"
                                     >
                                       <div className="flex-1">
-                                        <p className="font-medium">{item.product.name}</p>
+                                        <p className="font-medium">Product ID: {item.product_id}</p>
                                         <p className="text-xs text-muted-foreground">
-                                          {item.quantity} x {t("mvr")} {item.product.price.toFixed(2)}
-                                          {!item.product.taxExempt && (
-                                            <span className="ml-2">
-                                              ({item.product.taxRate}% GST)
-                                            </span>
-                                          )}
+                                          {item.quantity} x {t("mvr")} {Number(item.unit_price).toFixed(2)}
                                         </p>
                                       </div>
                                       <p className="font-medium">
                                         {t("mvr")}{" "}
-                                        {(item.product.price * item.quantity).toFixed(2)}
+                                        {Number(item.total).toFixed(2)}
                                       </p>
                                     </div>
                                   ))}
@@ -250,18 +251,18 @@ export default function History() {
                                 <div className="border-t pt-3 space-y-1">
                                   <div className="flex justify-between text-sm text-muted-foreground">
                                     <span>{t("subtotal")}</span>
-                                    <span>{t("mvr")} {transaction.subtotal.toFixed(2)}</span>
+                                    <span>{t("mvr")} {Number(transaction.subtotal).toFixed(2)}</span>
                                   </div>
-                                  {transaction.taxAmount > 0 && (
+                                  {Number(transaction.tax) > 0 && (
                                     <div className="flex justify-between text-sm text-muted-foreground">
                                       <span>{t("gst")}</span>
-                                      <span>{t("mvr")} {transaction.taxAmount.toFixed(2)}</span>
+                                      <span>{t("mvr")} {Number(transaction.tax).toFixed(2)}</span>
                                     </div>
                                   )}
                                   <div className="flex justify-between font-semibold pt-1 border-t">
                                     <span>{t("total")}</span>
                                     <span className="text-primary">
-                                      {t("mvr")} {transaction.total.toFixed(2)}
+                                      {t("mvr")} {Number(transaction.total).toFixed(2)}
                                     </span>
                                   </div>
                                 </div>

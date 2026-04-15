@@ -19,22 +19,40 @@ import {
 } from "@/components/ui/alert-dialog";
 import Link from "next/link";
 import { ArrowLeft, UserPlus, Edit, Trash2, ShieldCheck, UserCircle, AlertTriangle } from "lucide-react";
+import { storeService } from "@/services/storeService";
+import { useToast } from "@/hooks/use-toast";
 import type { User } from "@/types";
 
 export default function UsersPage() {
-  const { user, isAdmin, createUser, updateUser, deleteUser, getAllUsers } = useAuth();
+  const { user, isAdmin, currentStoreId } = useAuth();
   const { t } = useLanguage();
-  const [users, setUsers] = useState<User[]>([]);
+  const { toast } = useToast();
+  const [users, setUsers] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+  const [editingUser, setEditingUser] = useState<any | undefined>(undefined);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (currentStoreId && isAdmin()) {
+      loadUsers();
+    }
+  }, [currentStoreId, isAdmin]);
 
-  const loadUsers = () => {
-    setUsers(getAllUsers());
+  const loadUsers = async () => {
+    if (!currentStoreId) return;
+    try {
+      const data = await storeService.getStoreUsers(currentStoreId);
+      setUsers(data.map(d => ({
+        id: d.user_id,
+        name: d.profiles?.full_name || d.user_id,
+        username: d.profiles?.email || "",
+        role: d.role,
+        isActive: true,
+        createdAt: d.created_at
+      })));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   if (!user || !isAdmin()) {
@@ -54,37 +72,37 @@ export default function UsersPage() {
     );
   }
 
-  const handleCreateUser = (userData: Omit<User, "id" | "createdAt" | "createdBy">) => {
-    if (editingUser) {
-      updateUser(editingUser.id, userData);
-    } else {
-      createUser(userData);
-    }
-    loadUsers();
+  const handleCreateUser = (userData: any) => {
+    toast({ title: "Info", description: "Creating users directly is disabled in this demo." });
     setShowModal(false);
     setEditingUser(undefined);
   };
 
-  const handleEdit = (userToEdit: User) => {
+  const handleEdit = (userToEdit: any) => {
     setEditingUser(userToEdit);
     setShowModal(true);
   };
 
-  const handleDelete = (userId: string) => {
-    deleteUser(userId);
-    loadUsers();
-    setDeletingUserId(null);
+  const handleDelete = async (userId: string) => {
+    if (!currentStoreId) return;
+    try {
+      await storeService.removeStoreUser(currentStoreId, userId);
+      loadUsers();
+      setDeletingUserId(null);
+      toast({ title: "Success", description: "User removed from store." });
+    } catch(err) {
+      toast({ title: "Error", description: "Could not remove user.", variant: "destructive" });
+    }
   };
 
   const toggleUserStatus = (userId: string, currentStatus: boolean) => {
-    updateUser(userId, { isActive: !currentStatus });
-    loadUsers();
+    toast({ title: "Info", description: "Toggling user status is disabled in this demo." });
   };
 
   const activeUsers = users.filter((u) => u.isActive);
   const inactiveUsers = users.filter((u) => !u.isActive);
-  const adminCount = users.filter((u) => u.role === "admin" && u.isActive).length;
-  const cashierCount = users.filter((u) => u.role === "cashier" && u.isActive).length;
+  const adminCount = users.filter((u) => u.role === "admin" || u.role === "owner").length;
+  const cashierCount = users.filter((u) => u.role === "cashier").length;
 
   return (
     <>
@@ -172,7 +190,6 @@ export default function UsersPage() {
                     <TableHead>{t("name")}</TableHead>
                     <TableHead>{t("username")}</TableHead>
                     <TableHead>{t("role")}</TableHead>
-                    <TableHead>{t("contact")}</TableHead>
                     <TableHead>{t("createdAt")}</TableHead>
                     <TableHead className="text-right">{t("actions")}</TableHead>
                   </TableRow>
@@ -183,14 +200,9 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{u.name}</TableCell>
                       <TableCell className="font-mono text-sm">{u.username}</TableCell>
                       <TableCell>
-                        <Badge variant={u.role === "admin" ? "default" : "secondary"}>
-                          {u.role === "admin" ? t("admin") : t("cashier")}
+                        <Badge variant={u.role === "admin" || u.role === "owner" ? "default" : "secondary"}>
+                          {u.role === "admin" || u.role === "owner" ? t("admin") : t("cashier")}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {u.phone && <div>{u.phone}</div>}
-                        {u.email && <div>{u.email}</div>}
-                        {!u.phone && !u.email && "-"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(u.createdAt).toLocaleDateString()}
@@ -205,7 +217,7 @@ export default function UsersPage() {
                             <Edit className="w-4 h-4 mr-1" />
                             {t("edit")}
                           </Button>
-                          {u.id !== user.id && (
+                          {u.id !== user.id && u.role !== "owner" && (
                             <>
                               <Button
                                 variant="outline"
@@ -229,7 +241,7 @@ export default function UsersPage() {
                   ))}
                   {activeUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center text-muted-foreground">
                         {t("noUsers")}
                       </TableCell>
                     </TableRow>
@@ -238,49 +250,6 @@ export default function UsersPage() {
               </Table>
             </CardContent>
           </Card>
-
-          {inactiveUsers.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="font-heading">{t("inactiveUsers")}</CardTitle>
-                <CardDescription>{t("deactivatedAccounts")}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("name")}</TableHead>
-                      <TableHead>{t("username")}</TableHead>
-                      <TableHead>{t("role")}</TableHead>
-                      <TableHead className="text-right">{t("actions")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {inactiveUsers.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium text-muted-foreground">{u.name}</TableCell>
-                        <TableCell className="font-mono text-sm text-muted-foreground">{u.username}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {u.role === "admin" ? t("admin") : t("cashier")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => toggleUserStatus(u.id, u.isActive)}
-                          >
-                            {t("reactivate")}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
         </main>
       </div>
 
