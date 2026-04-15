@@ -278,6 +278,23 @@ function POSContent() {
         </header>
 
         <main className="container mx-auto px-4 py-6">
+          {!user && (
+            <div className="mb-6 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-lg">Welcome to Maldives Shop POS</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Browse products and explore the system. Sign in to access all features including checkout, inventory management, and reports.
+                  </p>
+                </div>
+                <Button onClick={() => setShowLogin(true)}>
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign In
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <div className="flex items-center gap-4">
@@ -343,10 +360,54 @@ function POSContent() {
             <div className="lg:col-span-1">
               <div className="sticky top-6">
                 <CheckoutCart
-                  onCheckout={() => setShowPayment(true)}
-                  onCreateInvoice={() => setShowInvoice(true)}
-                  onCreateQuotation={() => setShowQuotation(true)}
-                  onCreateCreditBill={() => setShowCreditBill(true)}
+                  onCheckout={() => {
+                    if (!user) {
+                      toast({
+                        title: "Sign In Required",
+                        description: "Please sign in to complete checkout",
+                        variant: "destructive",
+                      });
+                      setShowLogin(true);
+                      return;
+                    }
+                    setShowPayment(true);
+                  }}
+                  onCreateInvoice={() => {
+                    if (!user) {
+                      toast({
+                        title: "Sign In Required",
+                        description: "Please sign in to create invoices",
+                        variant: "destructive",
+                      });
+                      setShowLogin(true);
+                      return;
+                    }
+                    setShowInvoice(true);
+                  }}
+                  onCreateQuotation={() => {
+                    if (!user) {
+                      toast({
+                        title: "Sign In Required",
+                        description: "Please sign in to create quotations",
+                        variant: "destructive",
+                      });
+                      setShowLogin(true);
+                      return;
+                    }
+                    setShowQuotation(true);
+                  }}
+                  onCreateCreditBill={() => {
+                    if (!user) {
+                      toast({
+                        title: "Sign In Required",
+                        description: "Please sign in to create credit bills",
+                        variant: "destructive",
+                      });
+                      setShowLogin(true);
+                      return;
+                    }
+                    setShowCreditBill(true);
+                  }}
                 />
               </div>
             </div>
