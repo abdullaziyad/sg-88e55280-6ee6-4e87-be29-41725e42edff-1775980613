@@ -146,13 +146,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("User created:", authData.user.id);
 
-      // Wait for session to be established
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Verify session is active
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error("Session not established after signup");
+      // Check if email confirmation is required
+      if (!authData.session) {
+        console.log("Email confirmation required - session will be created after confirmation");
+        throw new Error("Please check your email to confirm your account before logging in.");
       }
 
       console.log("Session established, creating store...");
