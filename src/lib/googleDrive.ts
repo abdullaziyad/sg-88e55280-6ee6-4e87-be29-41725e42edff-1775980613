@@ -219,7 +219,7 @@ class GoogleDriveBackup {
     return backupData;
   }
 
-  async scheduleDaily<bh>Backup(storeId: string, storeName: string, hour = 2) {
+  async scheduleDailyBackup(storeId: string, storeName: string, hour = 2) {
     const now = new Date();
     const scheduled = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, 0, 0);
 
