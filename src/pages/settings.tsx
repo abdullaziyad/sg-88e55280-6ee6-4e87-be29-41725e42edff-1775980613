@@ -11,10 +11,12 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Store, Receipt, FileText, Settings as SettingsIcon, RotateCcw, ShieldAlert, Save } from "lucide-react";
+import { ArrowLeft, Store, Receipt, FileText, Settings as SettingsIcon, RotateCcw, ShieldAlert, Save, Cloud, HardDrive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { googleDriveBackup } from "@/lib/googleDrive";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 export default function Settings() {
   const { settings, updateSettings, resetSettings, saveSettings, hasUnsavedChanges, isLoading } = useSettings();
@@ -23,6 +25,51 @@ export default function Settings() {
   const { toast } = useToast();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("shop");
+  const isOnline = useOnlineStatus();
+  const [isAuthorizing, setIsAuthorizing] = useState(false);
+  const [isBackingUp, setIsBackingUp] = useState(false);
+  const [lastBackup, setLastBackup] = useState<any>(null);
+
+  const handleAuthorizeGoogleDrive = async () => {
+    setIsAuthorizing(true);
+    try {
+      await googleDriveBackup.initialize(settings.backup.googleDrive);
+      await googleDriveBackup.authorize();
+      toast({
+        title: "Google Drive Connected",
+        description: "Successfully authorized Google Drive access.",
+      });
+    } catch (error) {
+      toast({
+        title: "Authorization Failed",
+        description: "Failed to connect to Google Drive. Please check your credentials.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAuthorizing(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setIsBackingUp(true);
+    try {
+      await googleDriveBackup.initialize(settings.backup.googleDrive);
+      const result = await googleDriveBackup.createBackup("store-id", settings.shop.businessName);
+      setLastBackup(await googleDriveBackup.getLastBackupInfo());
+      toast({
+        title: "Backup Created",
+        description: "Your data has been backed up to Google Drive.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Backup Failed",
+        description: error.message || "Failed to create backup.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBackingUp(false);
+    }
+  };
 
   if (!isAdmin()) {
     return (
@@ -107,7 +154,7 @@ export default function Settings() {
 
         <main className="container mx-auto px-4 py-6 max-w-4xl">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsList className="grid w-full grid-cols-6 mb-6">
               <TabsTrigger value="shop">
                 <Store className="w-4 h-4 mr-2" />
                 {t("shopDetails")}
@@ -127,6 +174,10 @@ export default function Settings() {
               <TabsTrigger value="system">
                 <SettingsIcon className="w-4 h-4 mr-2" />
                 {t("systemSettings")}
+              </TabsTrigger>
+              <TabsTrigger value="backup">
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Backup
               </TabsTrigger>
             </TabsList>
 
@@ -416,6 +467,141 @@ export default function Settings() {
                       value={settings.system.lowStockThreshold}
                       onChange={(e) => updateSettings("system", { lowStockThreshold: parseInt(e.target.value) })}
                     />
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="backup">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Backup & Sync</CardTitle>
+                  <CardDescription>Configure automatic backups to Google Drive and offline sync</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {isOnline ? (
+                        <Cloud className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <HardDrive className="w-5 h-5 text-orange-500" />
+                      )}
+                      <div>
+                        <p className="font-medium">
+                          {isOnline ? "Online" : "Offline Mode"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {isOnline ? "Connected to cloud" : "Working offline - data will sync when online"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 border-t pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label>Enable Google Drive Backup</Label>
+                        <p className="text-sm text-muted-foreground">Automatically backup your data to Google Drive</p>
+                      </div>
+                      <Switch
+                        checked={settings.backup.enabled}
+                        onCheckedChange={(checked) => updateSettings("backup", { enabled: checked })}
+                      />
+                    </div>
+
+                    {settings.backup.enabled && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="gdrive-client-id">Google Drive Client ID</Label>
+                          <Input
+                            id="gdrive-client-id"
+                            value={settings.backup.googleDrive.clientId}
+                            onChange={(e) => updateSettings("backup", { 
+                              googleDrive: { ...settings.backup.googleDrive, clientId: e.target.value }
+                            })}
+                            placeholder="Your Google Cloud Client ID"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="gdrive-api-key">Google Drive API Key</Label>
+                          <Input
+                            id="gdrive-api-key"
+                            value={settings.backup.googleDrive.apiKey}
+                            onChange={(e) => updateSettings("backup", { 
+                              googleDrive: { ...settings.backup.googleDrive, apiKey: e.target.value }
+                            })}
+                            placeholder="Your Google Cloud API Key"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="gdrive-app-id">Google Drive App ID</Label>
+                          <Input
+                            id="gdrive-app-id"
+                            value={settings.backup.googleDrive.appId}
+                            onChange={(e) => updateSettings("backup", { 
+                              googleDrive: { ...settings.backup.googleDrive, appId: e.target.value }
+                            })}
+                            placeholder="Your Google Cloud App ID"
+                          />
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleAuthorizeGoogleDrive}
+                            disabled={isAuthorizing || !settings.backup.googleDrive.clientId}
+                            variant="outline"
+                          >
+                            {isAuthorizing ? "Authorizing..." : "Authorize Google Drive"}
+                          </Button>
+                          <Button
+                            onClick={handleCreateBackup}
+                            disabled={isBackingUp || !googleDriveBackup.isAuthorized()}
+                          >
+                            {isBackingUp ? "Creating Backup..." : "Backup Now"}
+                          </Button>
+                        </div>
+
+                        <div className="space-y-2 border-t pt-4">
+                          <div className="flex items-center justify-between">
+                            <Label>Daily Automatic Backup</Label>
+                            <Switch
+                              checked={settings.backup.schedule.daily}
+                              onCheckedChange={(checked) => updateSettings("backup", { 
+                                schedule: { ...settings.backup.schedule, daily: checked }
+                              })}
+                            />
+                          </div>
+
+                          {settings.backup.schedule.daily && (
+                            <div className="space-y-2">
+                              <Label htmlFor="backup-time">Backup Time</Label>
+                              <Input
+                                id="backup-time"
+                                type="time"
+                                value={settings.backup.schedule.time}
+                                onChange={(e) => updateSettings("backup", { 
+                                  schedule: { ...settings.backup.schedule, time: e.target.value }
+                                })}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        {lastBackup && (
+                          <div className="bg-muted p-4 rounded-lg">
+                            <p className="text-sm font-medium">Last Backup</p>
+                            <p className="text-sm text-muted-foreground">
+                              {new Date(lastBackup.date).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              File: {lastBackup.filename}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
