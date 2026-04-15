@@ -4,6 +4,8 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { storeService } from "@/services/storeService";
+import { syncEngine } from "@/lib/syncEngine";
+import { auditService } from "@/services/auditService";
 
 export type UserRole = "owner" | "admin" | "cashier";
 
@@ -86,6 +88,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: stores.find(s => s.id === storeToSelect)?.store_users[0]?.role as UserRole,
           storeName: stores.find(s => s.id === storeToSelect)?.name || "",
         });
+
+        // Log login
+        await auditService.logAction({
+          storeId: storeToSelect,
+          action: "login",
+          entityType: "user",
+          entityId: authUser.id,
+        });
       }
     } catch (error) {
       console.error("Error loading stores:", error);
@@ -148,11 +158,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setCurrentStoreId(null);
-    setAvailableStores([]);
-    localStorage.removeItem("selected_store_id");
+    try {
+      // Log logout before clearing state
+      if (currentStoreId && user) {
+        await auditService.logAction({
+          storeId: currentStoreId,
+          action: "logout",
+          entityType: "user",
+          entityId: user.id,
+        });
+      }
+
+      await supabase.auth.signOut();
+      setUser(null);
+      setCurrentStoreId(null);
+      syncEngine.stopAutoSync();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   const selectStore = (storeId: string) => {

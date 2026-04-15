@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { offlineDB } from "@/lib/db";
+import { auditService } from "./auditService";
 
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type TransactionInsert = Database["public"]["Tables"]["transactions"]["Insert"];
@@ -59,7 +60,30 @@ export const transactionService = {
 
         if (itemsError) throw itemsError;
 
-        return { ...txData, transaction_items: transactionItems };
+        // Update product stock
+        await Promise.all(
+          items.map(item =>
+            supabase.rpc("decrement_product_stock", {
+              product_id: item.product_id,
+              quantity: item.quantity,
+            })
+          )
+        );
+
+        // Log audit trail
+        await auditService.logAction({
+          storeId: transaction.store_id,
+          action: "transaction_complete",
+          entityType: "transaction",
+          entityId: newTransaction.id,
+          newData: {
+            transaction: newTransaction,
+            items: newItems,
+            total: transaction.total,
+          },
+        });
+
+        return newTransaction;
       } catch (error) {
         console.error("Online transaction failed, queued for sync:", error);
       }

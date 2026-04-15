@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { AppSettings } from "@/types/settings";
 import { useAuth } from "./AuthContext";
 import { googleDriveBackup } from "@/lib/googleDrive";
+import { auditService } from "@/services/auditService";
 
 const defaultSettings: AppSettings = {
   shop: {
@@ -118,6 +119,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
+      // Get old settings first
+      const { data: oldStore } = await supabase
+        .from("stores")
+        .select("settings")
+        .eq("id", currentStoreId)
+        .single();
+
       const { error } = await supabase
         .from("stores")
         .update({ 
@@ -129,6 +137,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       setHasUnsavedChanges(false);
+
+      // Log settings change
+      await auditService.logAction({
+        storeId: currentStoreId,
+        action: "settings_change",
+        entityType: "settings",
+        oldData: oldStore?.settings,
+        newData: settings,
+      });
 
       // Initialize Google Drive backup if enabled
       if (settings.backup.enabled && settings.backup.schedule.daily) {
