@@ -89,13 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           storeName: stores.find(s => s.id === storeToSelect)?.name || "",
         });
 
-        // Log login
-        await auditService.logAction({
+        // Log login (don't block on failure)
+        auditService.logAction({
           storeId: storeToSelect,
           action: "login",
           entityType: "user",
           entityId: authUser.id,
-        });
+        }).catch(err => console.warn("Failed to log login:", err));
       }
     } catch (error) {
       console.error("Error loading stores:", error);
@@ -109,42 +109,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
       if (data.user) {
         await loadUserStores(data.user);
         return true;
       }
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      return false;
+      throw new Error(error.message || "Login failed");
     }
   };
 
   const signup = async (email: string, password: string, storeName: string): Promise<boolean> => {
     try {
+      console.log("Starting signup process...");
+      
       // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
 
-      if (authError) throw authError;
-      if (!authData.user) return false;
+      if (authError) {
+        console.error("Auth signup error:", authError);
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        throw new Error("No user returned from signup");
+      }
 
-      // Wait a moment for session to be fully established
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("User created:", authData.user.id);
+
+      // Wait for session to be established
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Verify session is active
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Session not established after signup");
+      }
+
+      console.log("Session established, creating store...");
 
       // Create store for the new user
       const store = await storeService.createStore({
         name: storeName,
         settings: {
-          system: { currency: "MVR" }
+          shop: {
+            businessName: storeName,
+            businessAddress: "",
+            businessPhone: "",
+            businessEmail: email,
+          },
+          system: { 
+            currency: "MVR",
+            currencySymbol: "ރ.",
+            dateFormat: "DD/MM/YYYY" as const,
+            timeFormat: "12h" as const,
+            lowStockThreshold: 10
+          }
         } as any,
       });
 
+      console.log("Store created:", store.id);
+
       setCurrentStoreId(store.id);
+      setAvailableStores([{ id: store.id, name: store.name, role: "owner" }]);
       setUser({
         id: authData.user.id,
         email: authData.user.email!,
@@ -162,28 +198,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         newData: { name: storeName, owner: email },
       }).catch(err => console.warn("Failed to log store creation:", err));
 
+      console.log("Signup completed successfully");
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
-      return false;
+      throw new Error(error.message || "Signup failed");
     }
   };
 
   const logout = async () => {
     try {
-      // Log logout before clearing state
+      // Log logout before clearing state (don't block on failure)
       if (currentStoreId && user) {
-        await auditService.logAction({
+        auditService.logAction({
           storeId: currentStoreId,
           action: "logout",
           entityType: "user",
           entityId: user.id,
-        });
+        }).catch(err => console.warn("Failed to log logout:", err));
       }
 
       await supabase.auth.signOut();
       setUser(null);
       setCurrentStoreId(null);
+      setAvailableStores([]);
       syncEngine.stopAutoSync();
     } catch (error) {
       console.error("Logout error:", error);

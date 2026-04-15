@@ -54,8 +54,9 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       } else {
         setLoginError("Invalid email or password");
       }
-    } catch (error) {
-      setLoginError("An error occurred. Please try again.");
+    } catch (error: any) {
+      console.error("Login error:", error);
+      setLoginError(error.message || "An error occurred. Please try again.");
     } finally {
       setIsLoggingIn(false);
     }
@@ -95,6 +96,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         setSignupError("Failed to create account. Please try again.");
       }
     } catch (error: any) {
+      console.error("Signup error:", error);
       setSignupError(error.message || "An error occurred. Please try again.");
     } finally {
       setIsSigningUp(false);
