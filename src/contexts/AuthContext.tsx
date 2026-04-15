@@ -111,6 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error("Login error:", error);
+        
+        // Check if it's an email confirmation issue
+        if (error.message.includes("Email not confirmed") || error.message.includes("email_not_confirmed")) {
+          throw new Error("Please confirm your email address before logging in. Check your inbox for the confirmation link.");
+        }
+        
         throw error;
       }
       
@@ -148,11 +154,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Check if email confirmation is required
       if (!authData.session) {
-        console.log("Email confirmation required - session will be created after confirmation");
-        throw new Error("Please check your email to confirm your account before logging in.");
+        console.log("Email confirmation required");
+        throw new Error("Account created! Please check your email and click the confirmation link before logging in.");
       }
 
       console.log("Session established, creating store...");
+
+      // Verify we actually have a valid session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (!session || sessionError) {
+        throw new Error("Account created! Please check your email and confirm your account before logging in.");
+      }
 
       // Create store for the new user
       const store = await storeService.createStore({

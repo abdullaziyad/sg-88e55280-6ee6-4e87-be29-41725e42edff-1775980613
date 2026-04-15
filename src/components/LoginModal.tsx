@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { LogIn, AlertCircle, Store, Mail } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authService } from "@/services/authService";
+import { useToast } from "@/hooks/use-toast";
 
 interface LoginModalProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface LoginModalProps {
 export function LoginModal({ open, onClose }: LoginModalProps) {
   const { login, signup } = useAuth();
   const { t } = useLanguage();
+  const { toast } = useToast();
   
   // Login state
   const [loginEmail, setLoginEmail] = useState("");
@@ -52,11 +54,19 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
         setLoginPassword("");
         onClose();
       } else {
-        setLoginError("Invalid email or password");
+        setLoginError("Invalid email or password. Please check your credentials and try again.");
       }
     } catch (error: any) {
       console.error("Login error:", error);
-      setLoginError(error.message || "An error occurred. Please try again.");
+      
+      // Show specific error messages
+      if (error.message.includes("confirm your email") || error.message.includes("Email not confirmed")) {
+        setLoginError("Please confirm your email address before logging in. Check your inbox for the confirmation link.");
+      } else if (error.message.includes("Invalid login credentials")) {
+        setLoginError("Invalid email or password. If you just signed up, please confirm your email first.");
+      } else {
+        setLoginError(error.message || "An error occurred. Please try again.");
+      }
     } finally {
       setIsLoggingIn(false);
     }
@@ -97,7 +107,24 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
       }
     } catch (error: any) {
       console.error("Signup error:", error);
-      setSignupError(error.message || "An error occurred. Please try again.");
+      
+      // Show helpful error message
+      if (error.message.includes("confirm your email") || error.message.includes("check your email")) {
+        // This is actually a success case - account created, just needs confirmation
+        setSignupError("");
+        toast({
+          title: "Account Created!",
+          description: error.message,
+        });
+        // Clear form and switch to login tab after a moment
+        setSignupEmail("");
+        setSignupPassword("");
+        setSignupConfirmPassword("");
+        setStoreName("");
+        setTimeout(() => onClose(), 2000);
+      } else {
+        setSignupError(error.message || "An error occurred. Please try again.");
+      }
     } finally {
       setIsSigningUp(false);
     }
