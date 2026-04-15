@@ -79,6 +79,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const items = cart.map(item => ({
       product_id: item.product.id,
+      product_name: item.product.name,
+      product_sku: item.product.sku,
       quantity: item.quantity,
       unit_price: item.product.price,
       total: item.product.price * item.quantity,
