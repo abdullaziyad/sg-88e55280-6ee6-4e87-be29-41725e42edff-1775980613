@@ -12,8 +12,8 @@ import { ReportsProvider } from "@/contexts/ReportsContext";
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider>
-      <SettingsProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <SettingsProvider>
           <LanguageProvider>
             <CreditProvider>
               <DocumentProvider>
@@ -25,8 +25,8 @@ export default function App({ Component, pageProps }: AppProps) {
               </DocumentProvider>
             </CreditProvider>
           </LanguageProvider>
-        </AuthProvider>
-      </SettingsProvider>
+        </SettingsProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
