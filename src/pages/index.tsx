@@ -20,7 +20,24 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, LogIn, LogOut, Settings, FileText, CreditCard, BarChart3, Users, History, ShieldCheck } from "lucide-react";
+import {
+  Search,
+  Plus,
+  LogIn,
+  LogOut,
+  Settings,
+  FileText,
+  CreditCard,
+  BarChart3,
+  Users,
+  History,
+  ShieldCheck,
+  Package,
+  Monitor,
+  FileBarChart,
+  Shield,
+  ScanLine,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
