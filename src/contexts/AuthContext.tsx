@@ -79,13 +79,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Found stores:", stores.length);
       
       if (stores.length > 0) {
-        const mappedStores = stores.map((s) => ({
-          id: s.id,
-          name: s.name,
-          role: s.store_users[0]?.role as UserRole,
-        }));
-        
-        setAvailableStores(mappedStores);
+        setAvailableStores(
+          stores.map((s) => ({
+            id: s.id,
+            name: s.name,
+            role: s.store_users[0]?.role as UserRole,
+          }))
+        );
 
         // Auto-select first store or previously selected
         const savedStoreId = localStorage.getItem("selected_store_id");
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         
         console.log("Setting current store:", storeToSelect);
         const newStoreId = storeToSelect;
-        const newUser = {
+        const newUser: StoreUser = {
           id: authUser.id,
           email: authUser.email!,
           name: authUser.email?.split('@')[0] || "User",
@@ -105,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           storeName: selectedStore?.name || "",
         };
 
-        // Update state
         setCurrentStoreId(newStoreId);
         setUser(newUser);
 
@@ -122,12 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return { storeId: newStoreId, storeUser: newUser };
       } else {
-        console.error("No stores found for user");
-        return null;
+        console.error("No stores found for user - this shouldn't happen after signup");
+        // User exists but has no stores - they should create one
+        throw new Error("No store found for your account. Please contact support or try signing up again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error loading stores:", error);
-      return null;
+      throw error;
     }
   };
 
@@ -207,54 +207,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Account created! Please check your email and confirm your account before logging in.");
       }
 
+      console.log("Creating store:", storeName);
+
       // Create store for the new user
-      const store = await storeService.createStore({
-        name: storeName,
-        settings: {
-          shop: {
-            businessName: storeName,
-            businessAddress: "",
-            businessPhone: "",
-            businessEmail: email,
-          },
-          system: { 
-            currency: "MVR",
-            currencySymbol: "ރ.",
-            dateFormat: "DD/MM/YYYY" as const,
-            timeFormat: "12h" as const,
-            lowStockThreshold: 10
-          }
-        } as any,
-      });
+      try {
+        const store = await storeService.createStore({
+          name: storeName,
+          settings: {
+            shop: {
+              businessName: storeName,
+              businessAddress: "",
+              businessPhone: "",
+              businessEmail: email,
+            },
+            system: { 
+              currency: "MVR",
+              currencySymbol: "ރ.",
+              dateFormat: "DD/MM/YYYY" as const,
+              timeFormat: "12h" as const,
+              lowStockThreshold: 10
+            }
+          } as any,
+        });
 
-      console.log("Store created:", store.id);
+        console.log("Store created successfully:", store.id);
 
-      // Set state immediately
-      const newUser = {
-        id: authData.user.id,
-        email: authData.user.email!,
-        name: authData.user.email?.split('@')[0] || "User",
-        role: "owner" as UserRole,
-        storeName: store.name,
-      };
+        setCurrentStoreId(store.id);
+        setAvailableStores([{ id: store.id, name: store.name, role: "owner" }]);
+        setUser({
+          id: authData.user.id,
+          email: authData.user.email!,
+          name: authData.user.email?.split('@')[0] || "User",
+          role: "owner",
+          storeName: store.name,
+        });
 
-      setCurrentStoreId(store.id);
-      setAvailableStores([{ id: store.id, name: store.name, role: "owner" }]);
-      setUser(newUser);
+        // Log store creation (async, don't block on failure)
+        auditService.logAction({
+          storeId: store.id,
+          action: "create",
+          entityType: "store",
+          entityId: store.id,
+          newData: { name: storeName, owner: email },
+        }).catch(err => console.warn("Failed to log store creation:", err));
 
-      console.log("Signup state set:", newUser);
-
-      // Log store creation (async, don't block on failure)
-      auditService.logAction({
-        storeId: store.id,
-        action: "create",
-        entityType: "store",
-        entityId: store.id,
-        newData: { name: storeName, owner: email },
-      }).catch(err => console.warn("Failed to log store creation:", err));
-
-      console.log("Signup completed successfully");
-      return true;
+        console.log("Signup completed successfully");
+        return true;
+      } catch (storeError: any) {
+        console.error("Store creation error:", storeError);
+        throw new Error(`Failed to create store: ${storeError.message || "Unknown error"}. Please try again or contact support.`);
+      }
     } catch (error: any) {
       console.error("Signup error:", error);
       throw new Error(error.message || "Signup failed");
