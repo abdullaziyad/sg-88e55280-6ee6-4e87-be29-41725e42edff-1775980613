@@ -28,6 +28,7 @@ interface AuthContextType {
   signup: (email: string, password: string, storeName: string) => Promise<boolean>;
   selectStore: (storeId: string) => void;
   availableStores: Array<{ id: string; name: string; role: UserRole }>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,21 +37,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<StoreUser | null>(null);
   const [currentStoreId, setCurrentStoreId] = useState<string | null>(null);
   const [availableStores, setAvailableStores] = useState<Array<{ id: string; name: string; role: UserRole }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadUserStores(session.user);
+    // Check current session on mount
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          await loadUserStores(session.user);
+        }
+      } catch (error) {
+        console.error("Init auth error:", error);
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        loadUserStores(session.user);
+        await loadUserStores(session.user);
       } else {
         setUser(null);
         setCurrentStoreId(null);
@@ -61,20 +72,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserStores = async (authUser: User) => {
+  const loadUserStores = async (authUser: User): Promise<{ storeId: string; storeUser: StoreUser } | null> => {
     try {
       console.log("Loading stores for user:", authUser.id);
       const stores = await storeService.getUserStores();
       console.log("Found stores:", stores.length);
       
       if (stores.length > 0) {
-        setAvailableStores(
-          stores.map((s) => ({
-            id: s.id,
-            name: s.name,
-            role: s.store_users[0]?.role as UserRole,
-          }))
-        );
+        const mappedStores = stores.map((s) => ({
+          id: s.id,
+          name: s.name,
+          role: s.store_users[0]?.role as UserRole,
+        }));
+        
+        setAvailableStores(mappedStores);
 
         // Auto-select first store or previously selected
         const savedStoreId = localStorage.getItem("selected_store_id");
@@ -85,36 +96,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const selectedStore = stores.find(s => s.id === storeToSelect);
         
         console.log("Setting current store:", storeToSelect);
-        setCurrentStoreId(storeToSelect);
-        
-        console.log("Setting user state");
-        setUser({
+        const newStoreId = storeToSelect;
+        const newUser = {
           id: authUser.id,
           email: authUser.email!,
           name: authUser.email?.split('@')[0] || "User",
           role: selectedStore?.store_users[0]?.role as UserRole || "owner",
           storeName: selectedStore?.name || "",
-        });
+        };
 
-        console.log("User state set successfully");
+        // Update state
+        setCurrentStoreId(newStoreId);
+        setUser(newUser);
+
+        console.log("User state set:", newUser);
+        console.log("Store ID set:", newStoreId);
 
         // Log login (don't block on failure)
         auditService.logAction({
-          storeId: storeToSelect,
+          storeId: newStoreId,
           action: "login",
           entityType: "user",
           entityId: authUser.id,
         }).catch(err => console.warn("Failed to log login:", err));
+
+        return { storeId: newStoreId, storeUser: newUser };
       } else {
         console.error("No stores found for user");
+        return null;
       }
     } catch (error) {
       console.error("Error loading stores:", error);
+      return null;
     }
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
+      console.log("Login attempt for:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -132,22 +152,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       
       if (data.user && data.session) {
-        console.log("Login successful, user ID:", data.user.id);
-        console.log("Session established:", data.session.access_token ? "Yes" : "No");
+        console.log("Login successful, session established");
         
-        // Load user stores and set state
-        await loadUserStores(data.user);
+        // Load stores and wait for state to be set
+        const result = await loadUserStores(data.user);
         
-        // Verify user state was set
-        if (!user && data.user) {
-          console.warn("User state not set immediately after login, waiting...");
-          // Give it a moment for state to update
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if (!result) {
+          throw new Error("Failed to load store information");
         }
         
-        console.log("Login complete, user state ready");
+        console.log("Login complete - User and store loaded");
         return true;
       }
+      
       return false;
     } catch (error: any) {
       console.error("Login error:", error);
@@ -212,15 +229,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("Store created:", store.id);
 
-      setCurrentStoreId(store.id);
-      setAvailableStores([{ id: store.id, name: store.name, role: "owner" }]);
-      setUser({
+      // Set state immediately
+      const newUser = {
         id: authData.user.id,
         email: authData.user.email!,
         name: authData.user.email?.split('@')[0] || "User",
-        role: "owner",
+        role: "owner" as UserRole,
         storeName: store.name,
-      });
+      };
+
+      setCurrentStoreId(store.id);
+      setAvailableStores([{ id: store.id, name: store.name, role: "owner" }]);
+      setUser(newUser);
+
+      console.log("Signup state set:", newUser);
 
       // Log store creation (async, don't block on failure)
       auditService.logAction({
@@ -287,6 +309,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signup,
         selectStore,
         availableStores,
+        isLoading,
       }}
     >
       {children}

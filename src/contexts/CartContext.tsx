@@ -22,7 +22,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const { currentStoreId } = useAuth();
+  const { currentStoreId, user } = useAuth();
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -76,15 +76,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const completeTransaction = async (paymentMethod: "cash" | "card"): Promise<any> => {
+    console.log("completeTransaction called with:", { paymentMethod, currentStoreId, hasUser: !!user });
+    
     if (!currentStoreId) {
-      throw new Error("Please select a store first");
+      console.error("No store ID available");
+      throw new Error("Please select a store first. Try logging out and back in.");
     }
 
     // Verify user is authenticated
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
+      console.error("No active session");
       throw new Error("Your session has expired. Please sign in again.");
     }
+
+    console.log("Creating transaction for store:", currentStoreId);
 
     const items = cart.map(item => ({
       product_id: item.product.id,
@@ -106,6 +112,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       items
     );
 
+    console.log("Transaction created:", transaction.id);
     setCart([]);
     return transaction;
   };

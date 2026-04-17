@@ -50,6 +50,7 @@ export function LoginModal({ open, onClose }: LoginModalProps) {
     try {
       const success = await login(loginEmail, loginPassword);
       if (success) {
+        console.log("Login successful, state is ready");
         setLoginEmail("");
         setLoginPassword("");
         onClose();
