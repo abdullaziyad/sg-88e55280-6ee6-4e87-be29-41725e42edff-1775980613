@@ -43,7 +43,7 @@ function POSContent() {
   const [lastScannedBarcode, setLastScannedBarcode] = useState<string>("");
   const { addToCart, cart, clearCart } = useCart();
   const { t } = useLanguage();
-  const { user, logout, isAdmin, isCashier } = useAuth();
+  const { user, currentStoreId, logout, isAdmin, isCashier } = useAuth();
   const { toast } = useToast();
 
   // Barcode scanner integration
@@ -362,7 +362,11 @@ function POSContent() {
               <div className="sticky top-6">
                 <CheckoutCart
                   onCheckout={async () => {
+                    console.log("Checkout clicked, user:", user);
+                    console.log("Current store ID:", currentStoreId);
+                    
                     if (!user) {
+                      console.log("No user, showing login");
                       toast({
                         title: "Sign In Required",
                         description: "Please sign in to complete checkout",
@@ -372,18 +376,7 @@ function POSContent() {
                       return;
                     }
                     
-                    // Verify session is still active
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session) {
-                      toast({
-                        title: "Session Expired",
-                        description: "Please sign in again to continue",
-                        variant: "destructive",
-                      });
-                      setShowLogin(true);
-                      return;
-                    }
-                    
+                    console.log("User is authenticated, opening payment modal");
                     setShowPayment(true);
                   }}
                   onCreateInvoice={() => {

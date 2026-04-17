@@ -63,7 +63,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUserStores = async (authUser: User) => {
     try {
+      console.log("Loading stores for user:", authUser.id);
       const stores = await storeService.getUserStores();
+      console.log("Found stores:", stores.length);
       
       if (stores.length > 0) {
         setAvailableStores(
@@ -80,14 +82,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ? savedStoreId 
           : stores[0].id;
 
+        const selectedStore = stores.find(s => s.id === storeToSelect);
+        
+        console.log("Setting current store:", storeToSelect);
         setCurrentStoreId(storeToSelect);
+        
+        console.log("Setting user state");
         setUser({
           id: authUser.id,
           email: authUser.email!,
           name: authUser.email?.split('@')[0] || "User",
-          role: stores.find(s => s.id === storeToSelect)?.store_users[0]?.role as UserRole,
-          storeName: stores.find(s => s.id === storeToSelect)?.name || "",
+          role: selectedStore?.store_users[0]?.role as UserRole || "owner",
+          storeName: selectedStore?.name || "",
         });
+
+        console.log("User state set successfully");
 
         // Log login (don't block on failure)
         auditService.logAction({
@@ -96,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           entityType: "user",
           entityId: authUser.id,
         }).catch(err => console.warn("Failed to log login:", err));
+      } else {
+        console.error("No stores found for user");
       }
     } catch (error) {
       console.error("Error loading stores:", error);
@@ -120,8 +131,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw error;
       }
       
-      if (data.user) {
+      if (data.user && data.session) {
+        console.log("Login successful, user ID:", data.user.id);
+        console.log("Session established:", data.session.access_token ? "Yes" : "No");
+        
+        // Load user stores and set state
         await loadUserStores(data.user);
+        
+        // Verify user state was set
+        if (!user && data.user) {
+          console.warn("User state not set immediately after login, waiting...");
+          // Give it a moment for state to update
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+        console.log("Login complete, user state ready");
         return true;
       }
       return false;
