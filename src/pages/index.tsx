@@ -28,6 +28,7 @@ import {
   onMessage,
   initBroadcastChannel,
 } from "@/lib/multiWindow";
+import { supabase } from "@/integrations/supabase/client";
 
 function POSContent() {
   const [products, setProducts] = useState<Product[]>(mockProducts);
@@ -360,7 +361,7 @@ function POSContent() {
             <div className="lg:col-span-1">
               <div className="sticky top-6">
                 <CheckoutCart
-                  onCheckout={() => {
+                  onCheckout={async () => {
                     if (!user) {
                       toast({
                         title: "Sign In Required",
@@ -370,6 +371,19 @@ function POSContent() {
                       setShowLogin(true);
                       return;
                     }
+                    
+                    // Verify session is still active
+                    const { data: { session } } = await supabase.auth.getSession();
+                    if (!session) {
+                      toast({
+                        title: "Session Expired",
+                        description: "Please sign in again to continue",
+                        variant: "destructive",
+                      });
+                      setShowLogin(true);
+                      return;
+                    }
+                    
                     setShowPayment(true);
                   }}
                   onCreateInvoice={() => {

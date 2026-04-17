@@ -20,9 +20,21 @@ export function PaymentModal({ open, onClose, onComplete }: PaymentModalProps) {
   const [showReceipt, setShowReceipt] = useState(false);
 
   const handlePayment = async (method: "cash" | "card") => {
-    const completedTransaction = await completeTransaction(method);
-    setTransaction(completedTransaction);
-    setShowReceipt(true);
+    try {
+      const completedTransaction = await completeTransaction(method);
+      setTransaction(completedTransaction);
+      setShowReceipt(true);
+    } catch (error: any) {
+      console.error("Payment error:", error);
+      
+      // If it's an authentication error, close modal and let parent handle login
+      if (error.message.includes("session") || error.message.includes("sign in")) {
+        alert(error.message);
+        handleClose();
+      } else {
+        alert(error.message || "Payment failed. Please try again.");
+      }
+    }
   };
 
   const handlePrint = () => {

@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode, useEffect } from "react
 import type { Product, CartItem } from "@/types";
 import { transactionService } from "@/services/transactionService";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartContextType {
   cart: CartItem[];
@@ -75,7 +76,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const completeTransaction = async (paymentMethod: "cash" | "card"): Promise<any> => {
-    if (!currentStoreId) throw new Error("No store selected");
+    if (!currentStoreId) {
+      throw new Error("Please select a store first");
+    }
+
+    // Verify user is authenticated
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      throw new Error("Your session has expired. Please sign in again.");
+    }
 
     const items = cart.map(item => ({
       product_id: item.product.id,
