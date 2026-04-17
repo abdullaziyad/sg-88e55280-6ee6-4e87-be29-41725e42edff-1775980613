@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { SEO } from "@/components/SEO";
+import { LandingPage } from "@/components/LandingPage";
 import { ProductCard } from "@/components/ProductCard";
 import { CheckoutCart } from "@/components/CheckoutCart";
 import { PaymentModal } from "@/components/PaymentModal";
@@ -19,7 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Plus, Package, LogIn, LogOut, ShieldCheck, History, Monitor, Settings, CreditCard, FileBarChart, Users, ScanLine, CheckCircle2, XCircle, Shield } from "lucide-react";
+import { Search, Plus, LogIn, LogOut, Settings, FileText, CreditCard, BarChart3, Users, History, ShieldCheck } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import {
   getTerminalName,
@@ -471,9 +479,28 @@ function POSContent() {
 }
 
 export default function Home() {
+  const { user } = useAuth();
+  const [showLogin, setShowLogin] = useState(false);
+
+  // Show landing page for non-authenticated users
+  if (!user) {
+    return (
+      <>
+        <SEO 
+          title="Maldives Shop POS - Modern Point of Sale System"
+          description="Transform your Maldives shop with our smart POS system. Inventory management, sales analytics, and more."
+        />
+        <LandingPage onGetStarted={() => setShowLogin(true)} />
+        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+      </>
+    );
+  }
+
+  // Show POS interface for authenticated users
   return (
-    <CartProvider>
+    <>
+      <SEO title="POS System" />
       <POSContent />
-    </CartProvider>
+    </>
   );
 }

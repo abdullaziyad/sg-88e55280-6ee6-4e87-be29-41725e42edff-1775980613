@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+ 
 export type Json =
   | string
   | number
@@ -339,6 +339,14 @@ export type Database = {
       decrement_product_stock: {
         Args: { product_id: string; quantity: number }
         Returns: undefined
+      }
+      user_can_manage_store: {
+        Args: { store_id_param: string }
+        Returns: boolean
+      }
+      user_has_store_access: {
+        Args: { store_id_param: string }
+        Returns: boolean
       }
     }
     Enums: {
