@@ -1,6 +1,6 @@
 ---
 title: Create attractive landing page
-status: in_progress
+status: done
 priority: high
 type: feature
 tags:
@@ -22,4 +22,4 @@ Build an attractive landing page that showcases the Maldives Shop POS system fea
 - [x] Add call-to-action section with signup prompt
 - [x] Implement responsive design with ocean teal theme
 - [x] Add smooth scroll animations
-- [ ] Test responsiveness on mobile/tablet
+- [x] Test responsiveness on mobile/tablet
